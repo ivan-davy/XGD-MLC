@@ -27,7 +27,7 @@ def classify(**user_parsed_args):
         if bkg_spectrum.corrupted is False:
             bkg_spectrum.rebin().calcCountRate()
 
-        out = open(str(user_parsed_args['Output']), 'a')
+        out = open(str(user_parsed_args['OutputBinary']), 'a')
         bin_results = {}
         plotBinaryClassificationResults('sigma')
         if user_parsed_args['MethodBinary'] == 'sigma':
@@ -43,6 +43,7 @@ def classify(**user_parsed_args):
 
         if not config.bin_clf_only:
             print('\nBinary spectra classification completed. Initiating multi-label classifiers...\n')
+            out = open(str(user_parsed_args['Output']), 'a')
             print(bin_results)
 
     # stats = pstats.Stats(pr)

@@ -1,10 +1,81 @@
-from ml import mlLoadSets, mlGetFeatures
+import config
+from visual import mlShowAverage, mlShowLinfit
+from utility import loadSpectrumData
 from spclass import *
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score
 import pickle
 import pandas as pd
 import config
+
+
+def mlLoadBinarySets():
+    from os import walk, path
+    source_ml_set, background_ml_set = [], []
+    for root, dirs, files in walk(config.src_fileset_location):
+        for file in files:
+            if file.endswith('.sps'):
+                source_ml_set.append(loadSpectrumData(path.join(root, file)))
+    for root, dirs, files in walk(config.bkg_fileset_location):
+        for file in files:
+            if file.endswith('.sps'):
+                background_ml_set.append(loadSpectrumData(path.join(root, file)))
+    return source_ml_set, background_ml_set
+
+
+def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
+                        show_progress=True,
+                        show=False):
+    num_of_sections = int(config.kev_cap / bins_per_sect)
+    if feature_type == 'linfit':
+        from visual import linear
+        from scipy.optimize import curve_fit
+        set_a, set_b, counter = [], [], 0
+        for spectrum in ml_set:
+            counter += 1
+            spectrum_a, spectrum_b = [], []
+            if spectrum.corrupted is False:
+                spectrum.rebin()
+                spectrum.calcCountRate()
+            else:
+                continue
+            for section in range(num_of_sections):
+                section_ab = curve_fit(linear,
+                                       spectrum.rebin_bins[section * bins_per_sect:(section + 1) * bins_per_sect],
+                                       spectrum.count_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect])
+                spectrum_a.append(section_ab[0][0])
+                spectrum_b.append(section_ab[0][1])
+            if show:
+                mlShowLinfit(spectrum, spectrum_a, spectrum_b, bins_per_sect)
+            set_a.append(spectrum_a)
+            set_b.append(spectrum_b)
+            if show_progress:
+                print('\r', counter, '/', len(ml_set), spectrum.location, end='')
+        if show_progress:
+            print('\n')
+        return set_a, set_b
+
+    elif feature_type == 'average':
+        set_c, counter = [], 0
+        for spectrum in ml_set:
+            counter += 1
+            spectrum_c = []
+            if spectrum.corrupted is False:
+                spectrum.rebin()
+                spectrum.calcCountRate()
+            else:
+                continue
+            for section in range(num_of_sections):
+                section_c = spectrum.count_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
+                spectrum_c.append(sum(section_c) / bins_per_sect)
+            if show:
+                mlShowAverage(spectrum, spectrum_c, bins_per_sect)
+            set_c.append(spectrum_c)
+            if show_progress:
+                print('\r', counter, '/', len(ml_set), spectrum.location, end='')
+        if show_progress:
+            print('\n')
+        return set_c
 
 
 def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
@@ -30,14 +101,14 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
     except FileNotFoundError:
         print(f'{dframe_location} not found. Creating a new one...')
         if feature_type == 'linfit':
-            background_ml_set_a, background_ml_set_b = mlGetFeatures(background_ml_set,
-                                                                     feature_type,
-                                                                     bins_per_sect=bins_per_sect,
-                                                                     show=show)
-            source_ml_set_a, source_ml_set_b = mlGetFeatures(source_ml_set,
-                                                             feature_type,
-                                                             bins_per_sect=bins_per_sect,
-                                                             show=show)
+            background_ml_set_a, background_ml_set_b = mlGetBinaryFeatures(background_ml_set,
+                                                                           feature_type,
+                                                                           bins_per_sect=bins_per_sect,
+                                                                           show=show)
+            source_ml_set_a, source_ml_set_b = mlGetBinaryFeatures(source_ml_set,
+                                                                   feature_type,
+                                                                   bins_per_sect=bins_per_sect,
+                                                                   show=show)
             label = [label_names[0]] * len(background_ml_set_a) + [label_names[1]] * len(source_ml_set_a)
             ml_set_a = np.array(background_ml_set_a + source_ml_set_a)
             ml_set_b = np.array(background_ml_set_b + source_ml_set_b)
@@ -47,14 +118,14 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
                 data_dict[feature_names[num_of_sections + feature]] = ml_set_b[:, feature]
 
         elif feature_type == 'average':
-            background_ml_set_c = mlGetFeatures(background_ml_set,
-                                                feature_type,
-                                                bins_per_sect=bins_per_sect,
-                                                show=show)
-            source_ml_set_c = mlGetFeatures(source_ml_set,
-                                            feature_type,
-                                            bins_per_sect=bins_per_sect,
-                                            show=show)
+            background_ml_set_c = mlGetBinaryFeatures(background_ml_set,
+                                                      feature_type,
+                                                      bins_per_sect=bins_per_sect,
+                                                      show=show)
+            source_ml_set_c = mlGetBinaryFeatures(source_ml_set,
+                                                  feature_type,
+                                                  bins_per_sect=bins_per_sect,
+                                                  show=show)
             label = [label_names[0]] * len(background_ml_set_c) + [label_names[1]] * len(source_ml_set_c)
             ml_set_c = np.array(background_ml_set_c + source_ml_set_c)
             for feature in range(num_of_sections):
@@ -96,17 +167,17 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
                            show=False):
     X_test = None
     if feature_type == 'linfit':
-        test_ml_a, test_ml_b = mlGetFeatures([test_spectrum],
-                                             feature_type,
-                                             bins_per_sect=bins_per_sect,
-                                             show_progress=False,
-                                             show=show)
+        test_ml_a, test_ml_b = mlGetBinaryFeatures([test_spectrum],
+                                                   feature_type,
+                                                   bins_per_sect=bins_per_sect,
+                                                   show_progress=False,
+                                                   show=show)
         X_test = np.array(test_ml_a[0] + test_ml_b[0]).reshape(1, -1)
     elif feature_type == 'average':
-        test_ml = mlGetFeatures([test_spectrum],
-                                feature_type,
-                                bins_per_sect=bins_per_sect,
-                                show_progress=False)
+        test_ml = mlGetBinaryFeatures([test_spectrum],
+                                      feature_type,
+                                      bins_per_sect=bins_per_sect,
+                                      show_progress=False)
         X_test = np.array(test_ml[0]).reshape(1, -1)
     if scale:
         X_test = np.arctan(X_test)
@@ -125,7 +196,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, **user_args):
         print('File found.')
     except FileNotFoundError:
         print(f'{mdl_location} not found. Creating a new model...')
-        sp_ml_set, bkg_ml_set = mlLoadSets()
+        sp_ml_set, bkg_ml_set = mlLoadBinarySets()
         ml_bin_model = mlCreateBinaryModel(sp_ml_set, bkg_ml_set,
                                            user_args["FeatureBinary"],
                                            user_args["MethodBinary"],
