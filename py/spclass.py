@@ -17,6 +17,8 @@ class Spectrum:
         self.rebin_bins = None
         self.rebin_bin_data = None
         self.count_bin_data = None
+        self.features_array = None
+        self.isotope = None
         self.corrupted = False
 
     def __str__(self):
@@ -110,6 +112,7 @@ class Spectrum:
             return sum(self.count_bin_data)
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
+        self.rebin().calcCountRate()
         sp_avg = sum(self.count_bin_data)
         sp_err = (sp_avg * self.live_time_int) ** 0.5 / self.live_time_int
         bkg_avg = sum(bkg.count_bin_data)
@@ -118,7 +121,7 @@ class Spectrum:
         diff_err = (sp_err ** 2 + bkg_err ** 2) ** 0.5
 
         if diff_avg > diff_err * thr_multiplier:
-            return 'Signal'
+            return 'Source'
         else:
             return 'Background'
 
@@ -144,7 +147,7 @@ class Spectrum:
         for section in range(num_of_sections):
             chi += (sp_sections_avg[section] - bkg_sections_avg[section]) ** 2 / bkg_sections_avg[section]
         if chi > stats.chi2.ppf(1 - los, num_of_sections) * tolerance:  # 0.05 => 0.95
-            return 'Signal'
+            return 'Source'
         else:
             return 'Background'
 
@@ -174,6 +177,6 @@ class Spectrum:
             chi += (sp_sections_avg[section] - bkg_sections_avg[section]) ** 2 \
                    / (sp_sections_err[section] ** 2 + bkg_sections_err[section] ** 2)
         if chi > stats.chi2.ppf(1 - los, num_of_sections) * tolerance:  # 0.05 => 0.95
-            return 'Signal'
+            return 'Source'
         else:
             return 'Background'

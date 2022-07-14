@@ -1,0 +1,13 @@
+sps/test/202274_18213_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_17337_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_17015_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_18101_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_17174_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_18117_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_18303_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_18320_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_17122_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_17229_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_18219_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 
+sps/test/202274_17263_Cs-137_60s_15cm.sps                    mlrf       Caesium-137
+sps/test/202274_18202_Co-60_60s_15cm.sps                     mlrf       Cobalt-60 

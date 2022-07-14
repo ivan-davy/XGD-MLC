@@ -1,3 +1,2 @@
-import os
-import config
-
+from os import walk, path
+from utility import loadSpectrumData

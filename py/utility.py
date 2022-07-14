@@ -12,8 +12,14 @@ def loadSpectrumData(sps_filename):
         calibration = unpack_from('ff', buffer, 440)
         bin_data = unpack_from(str(num_of_bins) + 'i', buffer, 1024)
     spectrum = Spectrum(sps_filename, num_of_bins, real_time_int, live_time_int, calibration, bin_data)
-    if calibration[0] == 0:
+    if not spectrum.bin_data:
         spectrum.corrupted = True
+        print(spectrum.location)
+    if spectrum.cal[0] == 0:
+        if config.enforce_cal:
+            spectrum.cal = config.default_cal
+        else:
+            spectrum.corrupted = True
     return spectrum
 
 
@@ -81,3 +87,7 @@ def printBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, 
     print(f'\nAccuracy ({method}, {tolerance=}, {los=}): {accuracy}')
     print([tp, fp], '\n', [fn, tn])
     return [[tp, fp], [fn, tn]], accuracy
+
+
+def flatten(lst):
+    return [x for xs in lst for x in xs]

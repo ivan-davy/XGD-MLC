@@ -1,6 +1,7 @@
 import config
 from visual import *
 from mlbinclf import *
+from mlclf import *
 from argparse import ArgumentParser
 from cProfile import Profile
 from os import walk, path
@@ -23,28 +24,32 @@ def classify(**user_parsed_args):
             if test_spectrum.corrupted is False:
                 test_spectrum.rebin().calcCountRate()
                 counter += 1
-                print('\r', counter, '/', len(test_spectrum_set) - 1, test_spectrum.location, end='')
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
         if bkg_spectrum.corrupted is False:
             bkg_spectrum.rebin().calcCountRate()
 
-        out = open(str(user_parsed_args['OutputBinary']), 'a')
-        bin_results = {}
-        plotBinaryClassificationResults('sigma')
+        bin_out = open(str(user_parsed_args['OutputBinary']), 'a+')
+        bin_results, res = {}, None
         if user_parsed_args['MethodBinary'] == 'sigma':
             for test_spectrum in test_spectrum_set:
                 res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
                 bin_results[test_spectrum.location] = res
-                out.write(f'{test_spectrum.location:<60} {bkg_spectrum.location:<40} '
+                bin_out.write(f'{test_spectrum.location:<60} {bkg_spectrum.location:<40} '
                           f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
         elif 'ml' in user_parsed_args['MethodBinary']:
-            bin_results = mlBinaryClassifier(test_spectrum_set, out, show=False, **user_parsed_args)
+            bin_results = mlBinaryClassifier(test_spectrum_set, bin_out, show=False, **user_parsed_args)
         else:
             print('\nRequested binary classification method not supported.')
 
         if not config.bin_clf_only:
-            print('\nBinary spectra classification completed. Initiating multi-label classifiers...\n')
-            out = open(str(user_parsed_args['Output']), 'a')
-            print(bin_results)
+            print('Binary spectra classification completed. Forming data...')
+            no_bkg_test_spectrum_set = []
+            clf_out = open(str(user_parsed_args['Output']), 'a+')
+            for sp in test_spectrum_set:
+                if bin_results[sp.location] == 'Source':
+                    no_bkg_test_spectrum_set.append(sp)
+            clf_results = mlClassifier(no_bkg_test_spectrum_set, clf_out, show=False, **user_parsed_args)
+
 
     # stats = pstats.Stats(pr)
     # stats.sort_stats(pstats.SortKey.TIME)
