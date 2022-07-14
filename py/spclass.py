@@ -18,6 +18,7 @@ class Spectrum:
         self.rebin_bin_data = None
         self.count_bin_data = None
         self.features_array = None
+        self.has_source = None
         self.isotope = None
         self.corrupted = False
 

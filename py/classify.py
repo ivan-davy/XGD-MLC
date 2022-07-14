@@ -42,7 +42,7 @@ def classify(**user_parsed_args):
             print('\nRequested binary classification method not supported.')
 
         if not config.bin_clf_only:
-            print('Binary spectra classification completed. Forming data...')
+            print('Binary spectra classification completed. Proceeding to multi-label classification...')
             no_bkg_test_spectrum_set = []
             clf_out = open(str(user_parsed_args['Output']), 'a+')
             for sp in test_spectrum_set:

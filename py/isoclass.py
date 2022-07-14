@@ -2,8 +2,8 @@ from datetime import date
 
 
 class Isotope:
-    def __init__(self, label, name, A, Z, half_life_yrs, original_decay, original_date, acquisition_date):
-        self.label = label
+    def __init__(self, iso_id, name, A, Z, half_life_yrs, original_decay, original_date, acquisition_date):
+        self.iso_id = iso_id
         self.name = name
         self.A = A
         self.Z = Z

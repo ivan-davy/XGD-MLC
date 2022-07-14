@@ -7,6 +7,7 @@ from sklearn.metrics import confusion_matrix, accuracy_score
 import pickle
 import pandas as pd
 import config
+import numpy as np
 
 
 def mlLoadBinarySets():
@@ -15,11 +16,15 @@ def mlLoadBinarySets():
     for root, dirs, files in walk(config.src_fileset_location):
         for file in files:
             if file.endswith('.sps'):
-                source_ml_set.append(loadSpectrumData(path.join(root, file)))
+                sp = loadSpectrumData(path.join(root, file))
+                sp.has_source = True
+                source_ml_set.append(sp)
     for root, dirs, files in walk(config.bkg_fileset_location):
         for file in files:
             if file.endswith('.sps'):
-                background_ml_set.append(loadSpectrumData(path.join(root, file)))
+                sp = loadSpectrumData(path.join(root, file))
+                sp.has_source = False
+                background_ml_set.append(sp)
     return source_ml_set, background_ml_set
 
 
@@ -187,7 +192,8 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
 def mlBinaryClassifier(test_spectrum_set, out, show, **user_args):
     import pickle
     ml_bin_model = None
-    mdl_location = f'{config.bin_clf_model_directory}{"scaled_" if user_args["Scale"] else "_"}' \
+    mdl_location = f'{config.bin_clf_model_directory}{config.ml_bin_clf_bins_per_section}bps_{config.kev_cap}_kev' \
+                   f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
         print(f'\nLooking for {mdl_location}... ', end='')
@@ -212,7 +218,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, **user_args):
                                          user_args["FeatureBinary"],
                                          scale=user_args["Scale"])
             results[test_spectrum.location] = res
-            out.write(f'{test_spectrum.location:<60} {mdl_location:<40} '
-                      f'{user_args["MethodBinary"]:<10} {res:<10}\n')
+            out.write(f'{test_spectrum.location:<100} {mdl_location:<40} '
+                      f'{user_args["MethodBinary"]:<15} {res:<10}\n')
         print(f'Binary classification results exported to {config.bin_clf_report_location}')
         return results
