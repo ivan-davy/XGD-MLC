@@ -8,6 +8,7 @@ import pickle
 import pandas as pd
 import config
 import numpy as np
+import os
 
 
 def mlLoadBinarySets():
@@ -17,12 +18,22 @@ def mlLoadBinarySets():
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
+                if not any(sp.bin_data):
+                    print(f'CORRUPTED: {sp.location}')
+                    if config.delete_corrupted:
+                        os.remove(sp.location)
+                        continue
                 sp.has_source = True
                 source_ml_set.append(sp)
     for root, dirs, files in walk(config.bkg_fileset_location):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
+                if not any(sp.bin_data):
+                    print(f'CORRUPTED: {sp.location}')
+                    if config.delete_corrupted:
+                        os.remove(sp.location)
+                        continue
                 sp.has_source = False
                 background_ml_set.append(sp)
     return source_ml_set, background_ml_set
@@ -189,7 +200,7 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
     return ml_model.predict(X_test)[0]
 
 
-def mlBinaryClassifier(test_spectrum_set, out, show, **user_args):
+def mlBinaryClassifier(test_spectrum_set, out, show, show_results, **user_args):
     import pickle
     ml_bin_model = None
     mdl_location = f'{config.bin_clf_model_directory}{config.ml_bin_clf_bins_per_section}bps_{config.kev_cap}_kev' \
@@ -212,13 +223,16 @@ def mlBinaryClassifier(test_spectrum_set, out, show, **user_args):
             pickle.dump(ml_bin_model, f)
         print('Done!')
     finally:
-        results = {}
+        results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
+            if show_results:
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
+                counter += 1
             res = mlBinaryClassification(test_spectrum, ml_bin_model,
                                          user_args["FeatureBinary"],
                                          scale=user_args["Scale"])
             results[test_spectrum.location] = res
             out.write(f'{test_spectrum.location:<100} {mdl_location:<40} '
                       f'{user_args["MethodBinary"]:<15} {res:<10}\n')
-        print(f'Binary classification results exported to {config.bin_clf_report_location}')
+        print(f'\nBinary classification results exported to {config.bin_clf_report_location}')
         return results

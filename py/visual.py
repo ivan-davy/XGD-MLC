@@ -203,3 +203,11 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=ml_bin_clf_bins_per_section):
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
     plt.show()
+
+
+def plotClassificationResults():
+    fig, axes = plt.subplots(1, constrained_layout=True)
+    fig.set_size_inches(6, 12)
+
+
+    plt.show()

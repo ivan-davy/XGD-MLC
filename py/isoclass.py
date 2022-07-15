@@ -2,7 +2,8 @@ from datetime import date
 
 
 class Isotope:
-    def __init__(self, iso_id, name, A, Z, half_life_yrs, original_decay, original_date, acquisition_date):
+    def __init__(self, iso_id, name, A, Z, half_life_yrs, original_decay, original_date, acquisition_date,
+                 peaks, color):
         self.iso_id = iso_id
         self.name = name
         self.A = A
@@ -13,3 +14,5 @@ class Isotope:
         self.acquisition_date = acquisition_date
         self.acquisition_decay = self.original_decay * 2 ** (-(self.acquisition_date - self.original_date).days
                                                              / (365.25 * self.half_life))
+        self.peaks = peaks
+        self.color = color

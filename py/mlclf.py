@@ -1,13 +1,16 @@
+import pprint
+
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split
 import config
 import pickle
 import pandas as pd
 import numpy as np
-from visual import mlShowLinfit, mlShowAverage
+import isodata
+from visual import mlShowAverage, plotClassificationResults
 from utility import loadSpectrumData
 from scipy import *
-
+import os
 
 
 def mlLoadSets():
@@ -21,7 +24,12 @@ def mlLoadSets():
                     dir_name = subdir.rsplit('/', 1)[-1]
                     if config.test_fileset_location not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
-                        known_isotope = config.clf_isotopes[dir_name]
+                        if not any(sp.bin_data):
+                            print(f'CORRUPTED: {sp.location}')
+                            if config.delete_corrupted:
+                                os.remove(sp.location)
+                                continue
+                        known_isotope = isodata.clf_isotopes[dir_name]
                         sp.isotope = known_isotope
                         sp_set[sp.location] = sp
     return sp_set
@@ -63,7 +71,7 @@ def mlCreateModel(sp_set, feature_type, method,
             y = data['labels']
         print('Load complete.')
     except FileNotFoundError:
-        print(f'{dframe_location} not found. Creating a new one...')
+        print(f'Dataframe file not found. Creating a new one...')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -87,8 +95,8 @@ def mlCreateModel(sp_set, feature_type, method,
         from sklearn.multioutput import MultiOutputClassifier
         from sklearn.linear_model import LogisticRegression
         binary_indicator_arrays = {}
-        for key, value in config.clf_isotopes.items():
-            iso_list = [0] * len(config.clf_isotopes)
+        for key, value in isodata.clf_isotopes.items():
+            iso_list = [0] * len(isodata.clf_isotopes)
             iso_list[value.iso_id] = 1
             binary_indicator_arrays[value.name] = iso_list
         y_bin = []
@@ -100,10 +108,10 @@ def mlCreateModel(sp_set, feature_type, method,
             clf = MultiOutputClassifier(RandomForestClassifier(n_estimators=500, n_jobs=-1))
         elif method == 'mldt':
             from sklearn.tree import DecisionTreeClassifier
-            clf = DecisionTreeClassifier()
+            clf = MultiOutputClassifier(DecisionTreeClassifier())
         elif method == 'mllgr':
             from sklearn.linear_model import LogisticRegression
-            clf = LogisticRegression()
+            clf = MultiOutputClassifier(LogisticRegression())
         X = np.array(dataframe.values)
         y_bin = np.matrix(y_bin)
         if scale:
@@ -133,7 +141,8 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config
         X_test = np.array(test_ml).reshape(1, -1)
     if scale:
         X_test = np.arctan(X_test)
-    return ml_model.predict(X_test), ml_model.predict_proba(X_test)
+    res_proba = np.array(ml_model.predict_proba(X_test)).reshape(-1)[1::2]
+    return res_proba
 
 
 def mlClassifier(test_spectrum_set, out, show, **user_args):
@@ -163,19 +172,30 @@ def mlClassifier(test_spectrum_set, out, show, **user_args):
         print('\nProcessing data...')
         results = {}
         for test_spectrum in test_spectrum_set:
-            isotopes = []
-            res, res_proba = mlClassification(test_spectrum, ml_clf_model,
-                                   user_args["Feature"],
-                                   scale=user_args["Scale"])
-            res = res.reshape(-1)
-            res_proba = np.array(res_proba).reshape(-1)[1::2]
-            print(test_spectrum.location, res_proba, res)
-            for i in range(len(config.clf_isotopes.items())):
-                for key, value in config.clf_isotopes.items():
-                    if res_proba[i] >= config.predict_proba_threshold and value.iso_id == i:
-                        isotopes.append(value.name)
-            results[test_spectrum.location] = isotopes
+            test_spectrum_result = {}
+            res_proba = mlClassification(test_spectrum, ml_clf_model,
+                                         user_args["Feature"],
+                                         scale=user_args["Scale"])
+            i = 0
+            for key, value in isodata.clf_isotopes.items():
+                custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
+                if custom_proba > 1:
+                    custom_proba = 1
+                test_spectrum_result[value.name] = round(custom_proba, 3)
+                i += 1
+
+            results[test_spectrum.location] = test_spectrum_result
+            sorted_result_keys = sorted(test_spectrum_result, key=test_spectrum_result.get, reverse=True)
+            test_spectrum_result_sorted = {}
+            for w in sorted_result_keys:
+                test_spectrum_result_sorted[w] = test_spectrum_result[w]
+
+            print(test_spectrum.location, test_spectrum_result_sorted)
             out.write(f'{test_spectrum.location:<100} '
-                      f'{user_args["Method"]:<15} {"".join(isotopes):<30}\n')
+                      f'{config.ml_clf_bins_per_section:<3}bps '
+                      f'{user_args["Method"]:<15}'
+                      f'{test_spectrum_result_sorted}\n')
+
+            # plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
         print(f'\nClassification results exported to {config.clf_report_location}')
         return results

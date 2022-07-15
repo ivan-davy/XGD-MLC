@@ -11,10 +11,17 @@ from utility import loadSpectrumData
 def classify(**user_parsed_args):
     with Profile() as pr:
         test_spectrum_set, counter = [], 0
+        print(f'Checking for corrupted spectra files. Setting delete_corrupted is set to {config.delete_corrupted}\n')
         for root, dirs, files in walk(user_parsed_args['TestSet']):
             for file in files:
                 if file.endswith('.sps'):
-                    test_spectrum_set.append(loadSpectrumData(path.join(root, file)))
+                    sp = loadSpectrumData(path.join(root, file))
+                    if not any(sp.bin_data):
+                        print(f'CORRUPTED: {sp.location}')
+                        if config.delete_corrupted:
+                            os.remove(sp.location)
+                            continue
+                    test_spectrum_set.append(sp)
         print('Test files loaded:', len(test_spectrum_set), user_parsed_args['TestSet'])
         bkg_spectrum = loadSpectrumData(user_parsed_args['Bkg'])
 
@@ -37,7 +44,11 @@ def classify(**user_parsed_args):
                 bin_out.write(f'{test_spectrum.location:<60} {bkg_spectrum.location:<40} '
                           f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
         elif 'ml' in user_parsed_args['MethodBinary']:
-            bin_results = mlBinaryClassifier(test_spectrum_set, bin_out, show=False, **user_parsed_args)
+            bin_results = mlBinaryClassifier(test_spectrum_set,
+                                             bin_out,
+                                             show=False,
+                                             show_results=True,
+                                             **user_parsed_args)
         else:
             print('\nRequested binary classification method not supported.')
 
