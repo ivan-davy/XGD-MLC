@@ -13,7 +13,7 @@ import os
 
 def mlLoadBinarySets():
     from os import walk, path
-    source_ml_set, background_ml_set = [], []
+    source_sp_set, background_sp_set = [], []
     for root, dirs, files in walk(config.src_fileset_location):
         for file in files:
             if file.endswith('.sps'):
@@ -24,7 +24,7 @@ def mlLoadBinarySets():
                         os.remove(sp.location)
                         continue
                 sp.has_source = True
-                source_ml_set.append(sp)
+                source_sp_set.append(sp)
     for root, dirs, files in walk(config.bkg_fileset_location):
         for file in files:
             if file.endswith('.sps'):
@@ -35,8 +35,8 @@ def mlLoadBinarySets():
                         os.remove(sp.location)
                         continue
                 sp.has_source = False
-                background_ml_set.append(sp)
-    return source_ml_set, background_ml_set
+                background_sp_set.append(sp)
+    return source_sp_set, background_sp_set
 
 
 def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
@@ -58,7 +58,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bi
             for section in range(num_of_sections):
                 section_ab = curve_fit(linear,
                                        spectrum.rebin_bins[section * bins_per_sect:(section + 1) * bins_per_sect],
-                                       spectrum.count_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect])
+                                       spectrum.count_rate_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect])
                 spectrum_a.append(section_ab[0][0])
                 spectrum_b.append(section_ab[0][1])
             if show:
@@ -82,7 +82,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bi
             else:
                 continue
             for section in range(num_of_sections):
-                section_c = spectrum.count_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
+                section_c = spectrum.count_rate_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
                 spectrum_c.append(sum(section_c) / bins_per_sect)
             if show:
                 mlShowAverage(spectrum, spectrum_c, bins_per_sect)
@@ -115,7 +115,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
             model_data = pickle.load(f)
         print('Load complete.')
     except FileNotFoundError:
-        print(f'Dataframe not found. Creating a new one...')
+        print(f'Dataframe file not found. Creating a new one...')
         if feature_type == 'linfit':
             background_ml_set_a, background_ml_set_b = mlGetBinaryFeatures(background_ml_set,
                                                                            feature_type,
@@ -200,7 +200,7 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
     return ml_model.predict(X_test)[0]
 
 
-def mlBinaryClassifier(test_spectrum_set, out, show, show_results, **user_args):
+def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args):
     import pickle
     ml_bin_model = None
     mdl_location = f'{config.bin_clf_model_directory}{config.ml_bin_clf_bins_per_section}bps_{config.kev_cap}_kev' \
@@ -225,9 +225,9 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_results, **user_args):
     finally:
         results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
-            if show_results:
-                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
+            if show_progress:
                 counter += 1
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
             res = mlBinaryClassification(test_spectrum, ml_bin_model,
                                          user_args["FeatureBinary"],
                                          scale=user_args["Scale"])

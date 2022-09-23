@@ -1,5 +1,3 @@
-import pprint
-
 from sklearn.metrics import accuracy_score, confusion_matrix
 from sklearn.model_selection import train_test_split
 import config
@@ -36,7 +34,6 @@ def mlLoadSets():
 
 
 def mlGetFeatures(spectrum, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
-                  show_progress=True,
                   show=False):
     num_of_sections = int(config.kev_cap / bins_per_sect)
     if feature_type == 'average':
@@ -45,7 +42,7 @@ def mlGetFeatures(spectrum, feature_type, bins_per_sect=config.ml_bin_clf_bins_p
             spectrum.rebin()
             spectrum.calcCountRate()
             for section in range(num_of_sections):
-                section_c = spectrum.count_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
+                section_c = spectrum.count_rate_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
                 spectrum_c.append(sum(section_c) / bins_per_sect)
             if show:
                 mlShowAverage(spectrum, spectrum_c, bins_per_sect)
@@ -82,8 +79,8 @@ def mlCreateModel(sp_set, feature_type, method,
                                                      show=show)
                 data_features_set[key] = value.features_array
                 y.append(value.isotope.name)
-                counter += 1
                 if show_progress:
+                    counter += 1
                     print('\r', counter, '/', len(sp_set), key, end='')
             dataframe = pd.DataFrame.from_dict(data_features_set, orient='index', columns=feature_names)
         with open(dframe_location, 'wb+') as f:
@@ -136,8 +133,7 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config
     if feature_type == 'average':
         test_ml = mlGetFeatures(test_spectrum,
                                 feature_type,
-                                bins_per_sect=bins_per_sect,
-                                show_progress=False)
+                                bins_per_sect=bins_per_sect)
         X_test = np.array(test_ml).reshape(1, -1)
     if scale:
         X_test = np.arctan(X_test)
@@ -145,7 +141,7 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config
     return res_proba
 
 
-def mlClassifier(test_spectrum_set, out, show, **user_args):
+def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
     import pickle
     ml_clf_model = None
     mdl_location = f'{config.clf_model_directory}{config.ml_clf_bins_per_section}bps_{config.kev_cap}_kev' \
@@ -163,15 +159,19 @@ def mlClassifier(test_spectrum_set, out, show, **user_args):
                                      user_args["Feature"],
                                      user_args["Method"],
                                      scale=user_args["Scale"],
-                                     show=show,
+                                     show=False,
                                      show_progress=True)
         with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
         print('Done!')
     finally:
         print('\nProcessing data...')
-        results = {}
+        results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
+            if show_progress:
+                counter += 1
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
+
             test_spectrum_result = {}
             res_proba = mlClassification(test_spectrum, ml_clf_model,
                                          user_args["Feature"],
@@ -181,7 +181,7 @@ def mlClassifier(test_spectrum_set, out, show, **user_args):
                 custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
                 if custom_proba > 1:
                     custom_proba = 1
-                test_spectrum_result[value.name] = round(custom_proba, 3)
+                test_spectrum_result[key] = round(custom_proba, 3)
                 i += 1
 
             results[test_spectrum.location] = test_spectrum_result
@@ -190,12 +190,12 @@ def mlClassifier(test_spectrum_set, out, show, **user_args):
             for w in sorted_result_keys:
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
-            print(test_spectrum.location, test_spectrum_result_sorted)
+            # print(test_spectrum.location, test_spectrum_result_sorted)
             out.write(f'{test_spectrum.location:<100} '
                       f'{config.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
                       f'{test_spectrum_result_sorted}\n')
-
-            # plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
+            if show_results:
+                plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
         print(f'\nClassification results exported to {config.clf_report_location}')
         return results

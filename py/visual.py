@@ -4,7 +4,8 @@ import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
 from scipy import optimize
-from config import ml_bin_clf_bins_per_section
+from config import ml_bin_clf_bins_per_section, kev_cap, clf_display_threshold
+import isodata
 
 
 def plotAllBinData(spectrum):
@@ -18,7 +19,7 @@ def plotAllBinData(spectrum):
     axs[0, 1].step(spectrum.calib_bins, spectrum.calib_bin_data, color='blue')
     axs[0, 1].set_xlim([0, 2000])
     axs[1, 0].set(xlabel='keV (Rebinned)', ylabel='Count rate per keV')
-    axs[1, 0].step(spectrum.rebin_bins, spectrum.count_bin_data, color='purple')
+    axs[1, 0].step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='purple')
     axs[1, 0].set_xlim([0, 2000])
     axs[1, 1].set(xlabel='keV (Rebinned)', ylabel='Events per keV')
     axs[1, 1].step(spectrum.rebin_bins, spectrum.rebin_bin_data, color='black')
@@ -108,10 +109,10 @@ def plotCalcBkg(spectrum, bkg):
     # fig.suptitle(spectrum.name + ': count rate before and after the removal of background events')
     ax1.set(xlabel='Energy (keV)', ylabel='Count rate')
     ax1.set_xlim([0, 1500])
-    ax1.step(spectrum.rebin_bins, spectrum.count_bin_data, color='purple', label='137Cs')
-    ax1.step(bkg.rebin_bins, bkg.count_bin_data, color='green', label='Bkg')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='purple', label='137Cs')
+    ax1.step(bkg.rebin_bins, bkg.count_rate_bin_data, color='green', label='Bkg')
     spectrum.subtractBkg(bkg)
-    ax1.step(spectrum.rebin_bins, spectrum.count_bin_data, color='black', label='137Cs-bkg')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', label='137Cs-bkg')
     plt.legend()
     fig.canvas.manager.full_screen_toggle()
     plt.show()
@@ -119,7 +120,7 @@ def plotCalcBkg(spectrum, bkg):
 
 def plotBinData(spectrum):
     fig, ax1 = plt.subplots(1)
-    ax1.step(spectrum.rebin_bins, spectrum.count_bin_data, color='black', where='post')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     fig.canvas.manager.full_screen_toggle()
     plt.grid(True)
     plt.show()
@@ -168,7 +169,7 @@ def mlShowLinfit(spectrum, sp_a, sp_b, bins_per_sect=ml_bin_clf_bins_per_section
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)
     fig, ax1 = plt.subplots(constrained_layout=True)
-    ax1.step(spectrum.rebin_bins, spectrum.count_bin_data, color='black', where='post')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     for section in range(num_of_sections):
         x = np.linspace(section * bins_per_sect, (section + 1) * bins_per_sect)
         ax1.vlines(section * bins_per_sect, ymin=-0.2,
@@ -188,7 +189,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=ml_bin_clf_bins_per_section):
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)
     fig, ax1 = plt.subplots(constrained_layout=True)
-    ax1.step(spectrum.rebin_bins, spectrum.count_bin_data, color='black', where='post')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     for section in range(num_of_sections - 1):
         x = np.linspace(section * bins_per_sect, (section + 1) * bins_per_sect)
         ax1.vlines(section * bins_per_sect, ymin=-0.2,
@@ -205,9 +206,33 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=ml_bin_clf_bins_per_section):
     plt.show()
 
 
-def plotClassificationResults():
-    fig, axes = plt.subplots(1, constrained_layout=True)
-    fig.set_size_inches(6, 12)
+def plotClassificationResults(spectrum, results):
+    fig, ax1 = plt.subplots(1)
+    fig.set_size_inches(10, 6)
+    plt.grid(True)
+    plt.rcParams['font.family'] = 'monospace'
+    fig.suptitle(spectrum.location, weight='bold')
+    ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
+    plt.xlim(0, kev_cap)
+    plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
+    plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
+    plt.ylabel('Count rate')
+    plt.xlabel('Energy (keV)')
 
+    isotope_lines = []
+    for key, value in results.items():
+        if value > clf_display_threshold:
+            for i in range(len(isodata.clf_isotopes[key].peaks)):
+                line = plt.vlines(isodata.clf_isotopes[key].peaks[i],
+                                  0,
+                                  max(spectrum.count_rate_bin_data) * 1.2,
+                                  color=isodata.clf_isotopes[key].color,
+                                  linewidth=2, alpha=value)
+                if i == 0:
+                    isotope_lines.append(line)
+
+    iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
+                       f'{round(value * 100, 5)}%' for key, value in results.items()]
+    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.95, 0.6))
 
     plt.show()

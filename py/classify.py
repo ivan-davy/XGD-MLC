@@ -11,7 +11,8 @@ from utility import loadSpectrumData
 def classify(**user_parsed_args):
     with Profile() as pr:
         test_spectrum_set, counter = [], 0
-        print(f'Checking for corrupted spectra files. Setting delete_corrupted is set to {config.delete_corrupted}\n')
+        print(f'Checking for corrupted spectra files. '
+              f'Note: setting delete_corrupted is set to {config.delete_corrupted}\n.')
         for root, dirs, files in walk(user_parsed_args['TestSet']):
             for file in files:
                 if file.endswith('.sps'):
@@ -47,7 +48,7 @@ def classify(**user_parsed_args):
             bin_results = mlBinaryClassifier(test_spectrum_set,
                                              bin_out,
                                              show=False,
-                                             show_results=True,
+                                             show_progress=True,
                                              **user_parsed_args)
         else:
             print('\nRequested binary classification method not supported.')
@@ -59,7 +60,12 @@ def classify(**user_parsed_args):
             for sp in test_spectrum_set:
                 if bin_results[sp.location] == 'Source':
                     no_bkg_test_spectrum_set.append(sp)
-            clf_results = mlClassifier(no_bkg_test_spectrum_set, clf_out, show=False, **user_parsed_args)
+            clf_results = mlClassifier(no_bkg_test_spectrum_set,
+                                       clf_out,
+                                       show=False,
+                                       show_progress=True,
+                                       show_results=True,
+                                       **user_parsed_args)
 
 
     # stats = pstats.Stats(pr)
@@ -79,7 +85,7 @@ def getSpectrumData(filename, t_norm=True, ca=None, cb=None):
         return spectrum.rebin_bin_data
     if t_norm:
         spectrum.calcCountRate()
-        return spectrum.count_bin_data
+        return spectrum.count_rate_bin_data
 
 
 if __name__ == '__main__':

@@ -28,6 +28,8 @@ ml_clf_bins_per_section = 5
 clf_feature_type = 'average'  # average
 clf_method = 'mllgr'  # mllgr, mldt, mlrf
 
+clf_display_threshold = 0.01
+
 ###
 
 kev_cap = 1500
@@ -37,5 +39,5 @@ enforce_cal = True
 bin_clf_only = False
 show = False
 ml_perform_data_scaling = True
-delete_corrupted = False  # Recommended to set to True on first launch (backup your data!)
+delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)
 keep_redundant_data = False  # False is recommended

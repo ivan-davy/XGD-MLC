@@ -16,7 +16,7 @@ class Spectrum:
         self.calib_bin_data = None
         self.rebin_bins = None
         self.rebin_bin_data = None
-        self.count_bin_data = None
+        self.count_rate_bin_data = None
         self.features_array = None
         self.has_source = None
         self.isotope = None
@@ -31,7 +31,7 @@ class Spectrum:
             x = [i * self.cal[0] + self.cal[1] for i in range(self.channel_qty)]
             y = [self.bin_data[i] / self.cal[0] for i in range(len(self.bin_data))]
             if keep_redundant_data is False:
-                x = x[:kev_cap]
+                x = x[:int(kev_cap * self.cal[0])]
                 y = y[:len(x)]
             self.calib_bins = x
             self.calib_bin_data = y
@@ -76,13 +76,15 @@ class Spectrum:
                 if slices_in_new[i] is not None:
                     rebin_bin_data[slices_in_new[i]] += slices[i]
             del rebin_bin_data[max_kev:]
+            if keep_redundant_data is False:
+                rebin_bin_data = rebin_bin_data[:int(kev_cap)]
             self.rebin_bin_data = rebin_bin_data
         return self
 
     def calcCountRate(self):
         if not self.corrupted:
-            count_bin_data = [self.rebin_bin_data[i] / self.live_time_int for i in range(len(self.rebin_bin_data))]
-            setattr(self, 'count_bin_data', count_bin_data)
+            count_rate_bin_data = [self.rebin_bin_data[i] / self.live_time_int for i in range(len(self.rebin_bin_data))]
+            setattr(self, 'count_rate_bin_data', count_rate_bin_data)
         self.cleanup()
         return self
 
@@ -95,14 +97,14 @@ class Spectrum:
             if kev_cap != 0:
                 del self.rebin_bins[kev_cap:]
                 del self.rebin_bin_data[kev_cap:]
-                del self.count_bin_data[kev_cap:]
+                del self.count_rate_bin_data[kev_cap:]
 
     def subtractBkg(self, bkg):
-        if bkg.count_bin_data is None:
+        if bkg.count_rate_bin_data is None:
             bkg.calcCountRate()
-        self.count_bin_data = [self.count_bin_data[i] - bkg.count_bin_data[i]
-                               if self.count_bin_data[i] - bkg.count_bin_data[i] >= 0 else 0.0
-                               for i in range(len(self.count_bin_data))]
+        self.count_rate_bin_data = [self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i]
+                               if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
+                                    for i in range(len(self.count_rate_bin_data))]
 
     def getNumOfEvents(self, dtype='count_rate'):
         if dtype == 'raw':
@@ -110,13 +112,13 @@ class Spectrum:
         if dtype == 'rebin':
             return sum(self.bin_data)
         if dtype == 'count_rate':
-            return sum(self.count_bin_data)
+            return sum(self.count_rate_bin_data)
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
         self.rebin().calcCountRate()
-        sp_avg = sum(self.count_bin_data)
+        sp_avg = sum(self.count_rate_bin_data)
         sp_err = (sp_avg * self.live_time_int) ** 0.5 / self.live_time_int
-        bkg_avg = sum(bkg.count_bin_data)
+        bkg_avg = sum(bkg.count_rate_bin_data)
         bkg_err = (bkg_avg * bkg.live_time_int) ** 0.5 / bkg.live_time_int
         diff_avg = abs(sp_avg - bkg_avg)
         diff_err = (sp_err ** 2 + bkg_err ** 2) ** 0.5
@@ -128,11 +130,11 @@ class Spectrum:
 
     def pearsonBinaryClassify(self, bkg, num_of_sections=bin_clf_sections_qty,  # Ineffective method, not implemented
                               tolerance=1, los=0.05):
-        bkg_counts_per_section = sum(bkg.count_bin_data) / num_of_sections
+        bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):
             while temp_sum < bkg_counts_per_section and bin_iter != len(bkg.rebin_bins) - 1:
-                temp_sum += bkg.count_bin_data[bin_iter]
+                temp_sum += bkg.count_rate_bin_data[bin_iter]
                 bin_iter += 1
             bkg_sections_avg.append(temp_sum)
             section_borders.append(bin_iter)
@@ -140,7 +142,7 @@ class Spectrum:
         sp_sections_avg, sp_sections_err, bin_iter, sec_iter, temp_sum = [], [], 0, 0, 0
         for section in range(num_of_sections):
             while bin_iter < section_borders[section + 1] and bin_iter != len(self.rebin_bins) - 1:
-                temp_sum += self.count_bin_data[bin_iter]
+                temp_sum += self.count_rate_bin_data[bin_iter]
                 bin_iter += 1
             sp_sections_avg.append(temp_sum)
             temp_sum = 0
@@ -154,11 +156,11 @@ class Spectrum:
 
     def chi2squareBinaryClassify(self, bkg, num_of_sections=bin_clf_sections_qty,  # Ineffective method, not implemented
                                  tolerance=3, los=0.05):
-        bkg_counts_per_section = sum(bkg.count_bin_data) / num_of_sections
+        bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):
             while temp_sum < bkg_counts_per_section and bin_iter != len(bkg.rebin_bins) - 1:
-                temp_sum += bkg.count_bin_data[bin_iter]
+                temp_sum += bkg.count_rate_bin_data[bin_iter]
                 bin_iter += 1
             bkg_sections_avg.append(temp_sum)
             bkg_sections_err.append((temp_sum * bkg.live_time_int) ** 0.5 / bkg.live_time_int)
@@ -167,7 +169,7 @@ class Spectrum:
         sp_sections_avg, sp_sections_err, bin_iter, sec_iter, temp_sum = [], [], 0, 0, 0
         for section in range(num_of_sections):
             while bin_iter < section_borders[section + 1] and bin_iter != len(self.rebin_bins) - 1:
-                temp_sum += self.count_bin_data[bin_iter]
+                temp_sum += self.count_rate_bin_data[bin_iter]
                 bin_iter += 1
             sp_sections_avg.append(temp_sum)
             sp_sections_err.append((temp_sum * self.live_time_int) ** 0.5 / self.live_time_int)

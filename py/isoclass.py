@@ -1,6 +1,3 @@
-from datetime import date
-
-
 class Isotope:
     def __init__(self, iso_id, name, A, Z, half_life_yrs, original_decay, original_date, acquisition_date,
                  peaks, color):
