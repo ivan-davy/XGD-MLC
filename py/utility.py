@@ -109,25 +109,23 @@ def getClfMetrics(results, show_results=True, **user_args):
             matches += 1
 
     total_sum = 0
-    per_isotope_correctly_guessed = dict.fromkeys(clf_isotopes, 0)
-    per_isotope_total = dict.fromkeys(clf_isotopes, 0)
-    per_isotope_precisions = {}
     for key, val in results.items():
         correctly_guessed = 0
         expected_isotopes = 0
         precision = 0
         for isotope in clf_isotopes.keys():
             if isotope in key:
-                per_isotope_total[isotope] += 1
                 expected_isotopes += 1
                 if val[isotope] > config.clf_threshold:
-                    per_isotope_correctly_guessed[isotope] += 1
                     correctly_guessed += 1
         if expected_isotopes != 0:
             precision = correctly_guessed/expected_isotopes
         total_sum += precision
 
     total_sum = 0
+    per_isotope_correctly_guessed = dict.fromkeys(clf_isotopes, 0)
+    per_isotope_total = dict.fromkeys(clf_isotopes, 0)
+    per_isotope_accuracies = {}
     for key, val in results.items():
         correctly_guessed = 0
         unique_isotopes = set()
@@ -137,8 +135,10 @@ def getClfMetrics(results, show_results=True, **user_args):
             if val[isotope] > config.clf_threshold:
                 unique_isotopes.add(isotope)
         for unique_isotope in unique_isotopes:
+            per_isotope_total[unique_isotope] += 1
             if val[unique_isotope] > config.clf_threshold:
                 correctly_guessed += 1
+                per_isotope_correctly_guessed[unique_isotope] += 1
         accuracy = correctly_guessed/len(unique_isotopes)
         total_sum += accuracy
 
@@ -147,7 +147,7 @@ def getClfMetrics(results, show_results=True, **user_args):
         print(f'Precision: {total_sum/len(results.keys())}')
         print(f'Accuracy: {total_sum/len(results.keys())}')
 
-        print('\nPer-isotope precisions:')
+        print('\nPer-isotope accuracies:')
         for key in per_isotope_total:
-            per_isotope_precisions[key] = per_isotope_correctly_guessed[key] / per_isotope_total[key]
-            print(f'{key}: {per_isotope_precisions[key]}')
+            per_isotope_accuracies[key] = per_isotope_correctly_guessed[key] / per_isotope_total[key]
+            print(f'{key}: {per_isotope_accuracies[key]}')
