@@ -5,7 +5,7 @@ from mlclf import *
 from argparse import ArgumentParser
 from cProfile import Profile
 from os import walk, path
-from utility import loadSpectrumData
+from utility import loadSpectrumData, getClfMetrics
 
 
 def classify(**user_parsed_args):
@@ -64,13 +64,12 @@ def classify(**user_parsed_args):
                                        clf_out,
                                        show=False,
                                        show_progress=True,
-                                       show_results=True,
+                                       show_results=False,
                                        **user_parsed_args)
+            getClfMetrics(clf_results,
+                          show_results=True,
+                          **user_parsed_args)
 
-
-    # stats = pstats.Stats(pr)
-    # stats.sort_stats(pstats.SortKey.TIME)
-    # stats.print_stats()
     return res
 
 

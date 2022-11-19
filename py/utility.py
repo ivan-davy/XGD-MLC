@@ -1,6 +1,7 @@
 from struct import unpack_from
 import config
 from spclass import Spectrum
+from isodata import clf_isotopes
 
 
 def loadSpectrumData(sps_filename):
@@ -56,7 +57,7 @@ def prepareSet(test_set):
     return test_set
 
 
-def printBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, los):
+def constructBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, los):
     res, tp, fp, fn, tn = None, 0, 0, 0, 0
     for spectrum in srcs:
         if not spectrum.corrupted:
@@ -91,3 +92,52 @@ def printBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, 
 
 def flatten(lst):
     return [x for xs in lst for x in xs]
+
+
+def getClfMetrics(results, show_results=True, **user_args):
+    print(f'Calculating statistics... (clf_threshold={config.clf_threshold})')
+
+    matches = 0
+    for key, val in results.items():
+        match = True
+        for isotope in clf_isotopes.keys():
+            if isotope in key:
+                if not (val[isotope] > config.clf_threshold):
+                    match = False
+                    break
+        if match:
+            matches += 1
+
+    total_sum = 0
+    for key, val in results.items():
+        correctly_guessed = 0
+        expected_isotopes = 0
+        precision = 0
+        for isotope in clf_isotopes.keys():
+            if isotope in key:
+                expected_isotopes += 1
+                if val[isotope] > config.clf_threshold:
+                    correctly_guessed += 1
+        if expected_isotopes != 0:
+            precision = correctly_guessed/expected_isotopes
+        total_sum += precision
+
+    total_sum = 0
+    for key, val in results.items():
+        correctly_guessed = 0
+        unique_isotopes = set()
+        for isotope in clf_isotopes.keys():
+            if isotope in key:
+                unique_isotopes.add(isotope)
+            if val[isotope] > config.clf_threshold:
+                unique_isotopes.add(isotope)
+        for unique_isotope in unique_isotopes:
+            if val[unique_isotope] > config.clf_threshold:
+                correctly_guessed += 1
+        accuracy = correctly_guessed/len(unique_isotopes)
+        total_sum += accuracy
+
+    if show_results:
+        print(f'EMR: {matches/len(results.keys())}')
+        print(f'Precision: {total_sum/len(results.keys())}')
+        print(f'Accuracy: {total_sum/len(results.keys())}')

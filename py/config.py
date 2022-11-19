@@ -30,6 +30,8 @@ clf_method = 'mllgr'  # mllgr, mldt, mlrf
 
 clf_display_threshold = 0.01
 
+clf_threshold = 0.5
+
 ###
 
 kev_cap = 1500
