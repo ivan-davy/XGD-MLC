@@ -3,11 +3,11 @@ from isoclass import Isotope
 
 
 clf_proba_custom_multipliers = {  # >: more detections, <: less detections
-    'Na22': 2,
-    'Co60': 1,
+    'Na22': 7,
+    'Co60': 5,
     'Cs137': 1,
-    'Eu152': 1,
-    'Am241': 10
+    'Eu152': 2,
+    'Am241': 15
 }
 
 clf_isotopes = {

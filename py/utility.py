@@ -95,7 +95,7 @@ def flatten(lst):
 
 
 def getClfMetrics(results, show_results=True, **user_args):
-    print(f'Calculating statistics... (clf_threshold={config.clf_threshold})')
+    print(f'Calculating statistics... (clf_threshold={config.clf_threshold})\n')
 
     matches = 0
     for key, val in results.items():
@@ -109,14 +109,19 @@ def getClfMetrics(results, show_results=True, **user_args):
             matches += 1
 
     total_sum = 0
+    per_isotope_correctly_guessed = dict.fromkeys(clf_isotopes, 0)
+    per_isotope_total = dict.fromkeys(clf_isotopes, 0)
+    per_isotope_precisions = {}
     for key, val in results.items():
         correctly_guessed = 0
         expected_isotopes = 0
         precision = 0
         for isotope in clf_isotopes.keys():
             if isotope in key:
+                per_isotope_total[isotope] += 1
                 expected_isotopes += 1
                 if val[isotope] > config.clf_threshold:
+                    per_isotope_correctly_guessed[isotope] += 1
                     correctly_guessed += 1
         if expected_isotopes != 0:
             precision = correctly_guessed/expected_isotopes
@@ -141,3 +146,8 @@ def getClfMetrics(results, show_results=True, **user_args):
         print(f'EMR: {matches/len(results.keys())}')
         print(f'Precision: {total_sum/len(results.keys())}')
         print(f'Accuracy: {total_sum/len(results.keys())}')
+
+        print('\nPer-isotope precisions:')
+        for key in per_isotope_total:
+            per_isotope_precisions[key] = per_isotope_correctly_guessed[key] / per_isotope_total[key]
+            print(f'{key}: {per_isotope_precisions[key]}')

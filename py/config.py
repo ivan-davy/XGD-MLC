@@ -30,7 +30,7 @@ clf_method = 'mllgr'  # mllgr, mldt, mlrf
 
 clf_display_threshold = 0.01
 
-clf_threshold = 0.5
+clf_threshold = 0.6
 
 ###
 
