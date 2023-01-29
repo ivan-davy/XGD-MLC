@@ -1,5 +1,5 @@
-test_file_location = 'sps/Cs_137_15cm.sps'
-bkg_file_location = 'sps/bkgs/60s/202275_13333_bkg_60s.sps'
+test_file_location = 'sps/test/Сs137_15cm.sps'
+bkg_file_location = 'sps/bkgs/60s/202275_13176_bkg_60s.sps'
 
 test_fileset_location = 'sps/test'
 bkg_fileset_location = 'sps/bkgs'
@@ -40,6 +40,6 @@ default_cal = [1.317870020866394, 0.1251399964094162]
 enforce_cal = True
 bin_clf_only = False
 show = False
-ml_perform_data_scaling = True
+ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)
 keep_redundant_data = False  # False is recommended

@@ -1,11 +1,10 @@
-import config
-from visual import *
+from src.utility.relpath import relpath
 from mlbinclf import *
 from mlclf import *
 from argparse import ArgumentParser
 from cProfile import Profile
 from os import walk, path
-from utility import loadSpectrumData, getClfMetrics
+from src.utility.common import loadSpectrumData, getClfMetrics
 
 
 def classify(**user_parsed_args):
@@ -91,19 +90,19 @@ if __name__ == '__main__':
     parser = ArgumentParser(description='Spectra ML Classificator')
     parser.add_argument('-T', '--TestSet',
                         help='location of spectra set to be tested',
-                        default=config.test_fileset_location,
+                        default=relpath(config.test_fileset_location),
                         type=str)
     parser.add_argument('-S', '--SigSet',
                         help='location of source spectra set',
-                        default=config.src_fileset_location,
+                        default=relpath(config.src_fileset_location),
                         type=str)
     parser.add_argument('-B', '--BkgSet',
                         help='location of background spectra set',
-                        default=config.bkg_fileset_location,
+                        default=relpath(config.bkg_fileset_location),
                         type=str)
     parser.add_argument('-b', '--Bkg',
                         help='location of background reference spectrum (needed for binary sigma method)',
-                        default=config.bkg_file_location,
+                        default=relpath(config.bkg_file_location),
                         type=str)
     parser.add_argument('-mb', '--MethodBinary',
                         help='binary classification method (filters out spectra with no source)',
@@ -115,11 +114,11 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument('-o', '--OutputBinary',
                         help='filename/location of the output report file',
-                        default=config.bin_clf_report_location,
+                        default=relpath(config.bin_clf_report_location),
                         type=str)
     parser.add_argument('-O', '--Output',
                         help='filename/location of the output report file',
-                        default=config.clf_report_location,
+                        default=relpath(config.clf_report_location),
                         type=str)
     parser.add_argument('-sc', '--Scale',
                         help='perform ML data pre-processing (boolean)',

@@ -1,6 +1,7 @@
 import config
+from utility.relpath import relpath
 from visual import mlShowAverage, mlShowLinfit
-from utility import loadSpectrumData
+from utility.common import loadSpectrumData
 from spclass import *
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -14,7 +15,7 @@ import os
 def mlLoadBinarySets():
     from os import walk, path
     source_sp_set, background_sp_set = [], []
-    for root, dirs, files in walk(config.src_fileset_location):
+    for root, dirs, files in walk(relpath(config.src_fileset_location)):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
@@ -25,7 +26,7 @@ def mlLoadBinarySets():
                         continue
                 sp.has_source = True
                 source_sp_set.append(sp)
-    for root, dirs, files in walk(config.bkg_fileset_location):
+    for root, dirs, files in walk(relpath(config.bkg_fileset_location)):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
@@ -111,7 +112,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
     data_dict, model_data, labels, clf = {}, None, None, None
     try:
         print(f'Looking for {dframe_location}...')
-        with open(dframe_location, 'rb') as f:
+        with open(relpath(dframe_location), 'rb') as f:
             model_data = pickle.load(f)
         print('Load complete.')
     except FileNotFoundError:
@@ -148,7 +149,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
                 data_dict[feature_names[feature]] = ml_set_c[:, feature]
         data_dict['Type'] = labels
         model_data = pd.DataFrame(data_dict)
-        with open(dframe_location, 'wb+') as f:
+        with open(relpath(dframe_location), 'wb+') as f:
             pickle.dump(model_data, f)
     finally:
         if method == 'mlrf':
@@ -208,7 +209,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
         print(f'\nLooking for {mdl_location}... ', end='')
-        with open(mdl_location, 'rb') as f:
+        with open(relpath(mdl_location), 'rb') as f:
             ml_bin_model = pickle.load(f)
         print('File found.')
     except FileNotFoundError:
@@ -219,7 +220,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
                                            user_args["MethodBinary"],
                                            scale=user_args["Scale"],
                                            show=show)
-        with open(mdl_location, 'wb') as f:
+        with open(relpath(mdl_location), 'wb') as f:
             pickle.dump(ml_bin_model, f)
         print('Done!')
     finally:

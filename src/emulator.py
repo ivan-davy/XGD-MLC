@@ -1,6 +1,6 @@
 # В данный блок можно добавлять модули, необходимые для работы Вашей программы
 # import mymodule
-                          ## 
+                          ##
                          ##
                         #############
                          ##
@@ -16,7 +16,7 @@ from struct import unpack
 
 
 # В данный блок можно добавлять Ваши функции и классы
-                          ## 
+                          ##
                          ##
                         #############
                          ##
@@ -57,7 +57,7 @@ class MyWidget(QWidget):
 
         # Здесь можно поменять файл спектра, 
         # на основе которого будет генерироваться информация 
-        self.open_sps_file('Сs_137_15cm.sps')
+        self.open_sps_file('Сs137_15cm.sps')
 
     def on_click_start_button(self):
         self.start_time = time.time()
@@ -99,7 +99,7 @@ class MyWidget(QWidget):
     def periodic_function(self):
         # в данный блок нужно добавить вызовы Ваших функций и
         # результат сохранить в переменной your_function_result
-                          ## 
+                          ##
                          ##
                         #############
                          ##
