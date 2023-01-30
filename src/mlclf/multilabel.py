@@ -4,7 +4,7 @@ import pickle
 import pandas as pd
 import numpy as np
 from config import isodata, settings
-from visual import mlShowAverage, plotClassificationResults
+from utility.visual import mlShowAverage, plotClassificationResults
 from utility.data import loadSpectrumData
 import os
 
@@ -18,7 +18,7 @@ def mlLoadSets():
             for file in files:
                 if file.endswith('.sps'):
                     dir_name = subdir.rsplit(os.sep, 1)[-1]
-                    if settings.test_fileset_location not in dir_name:
+                    if str(settings.test_fileset_location) not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
                             print(f'CORRUPTED: {sp.path}')
@@ -59,7 +59,7 @@ def mlCreateModel(sp_set,
     if feature_type == 'average':
         feature_names = [f'C{segment}' for segment in range(num_of_sections)]
 
-    dframe_location = f'{settings.clf_dataframe_directory}{bins_per_sect}bps_{settings.kev_cap}' \
+    dframe_location = f'{settings.clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}.dframe'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
@@ -70,7 +70,7 @@ def mlCreateModel(sp_set,
             y = data['labels']
         print('Load complete.')
     except FileNotFoundError:
-        print(f'Dataframe file not found. Creating a new one...')
+        print(f'Dataframe file not found. Creating a new one...\n')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -114,14 +114,11 @@ def mlCreateModel(sp_set,
         X = np.array(dataframe.values)
         if scale:
             X = np.arctan(X)
-        print(f'{X=}'
-              f'{y_bin=}'
-              f'{clf=}')
-        clf = mlFormModel(X, y_bin, clf)
+        clf = mlFormCompleteModel(X, y_bin, clf)
         return clf
 
 
-def mlFormModel(X, y, ml_clf_model):
+def mlFormCompleteModel(X, y, ml_clf_model):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2)
     ml_clf_model.fit(X_train, y_train)
     y_pred = ml_clf_model.predict(X_test)
@@ -148,23 +145,24 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
 def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
     import pickle
     ml_clf_model = None
-    mdl_location = f'{settings.clf_model_directory}{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
+    mdl_location = f'{settings.clf_model_directory}{os.sep}' \
+                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_clf.mdl'
     try:
-        print(f'\nLooking for {mdl_location}... ', end='')
+        print(f'Looking for {mdl_location}... ', end='')
         with open(mdl_location, 'rb') as f:
             ml_clf_model = pickle.load(f)
         print('File found.')
     except FileNotFoundError:
-        print(f'Model file not found. Creating a new one...')
+        print(f'\nModel file not found. Creating a new one...')
         sp_set = mlLoadSets()
         ml_clf_model = mlCreateModel(sp_set,
                                      user_args["Feature"],
                                      user_args["Method"],
                                      scale=user_args["Scale"],
-                                     show=False,
-                                     show_progress=True)
+                                     show=show,
+                                     show_progress=show_progress)
         with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
         print('Done!')
@@ -194,7 +192,6 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
             for w in sorted_result_keys:
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
-            # print(test_spectrum.location, test_spectrum_result_sorted)
             out.write(f'{test_spectrum.path:<100} '
                       f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'

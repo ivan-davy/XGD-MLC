@@ -1,4 +1,4 @@
-from utility.data import loadSpectrumData
+import os
 from classes.spclass import *
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score
@@ -6,8 +6,8 @@ import pickle
 import pandas as pd
 from config import settings
 import numpy as np
-import os
-from visual import mlShowLinfit, mlShowAverage
+from utility.data import loadSpectrumData
+from utility.visual import mlShowLinfit, mlShowAverage
 
 
 def mlLoadBinarySets():
@@ -43,7 +43,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=settings.ml_bin_clf_
                         show=False):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'linfit':
-        from visual import linear
+        from utility.visual import linear
         from scipy.optimize import curve_fit
         set_a, set_b, counter = [], [], 0
         for spectrum in ml_set:
@@ -105,7 +105,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
     else:
         feature_names = None
     label_names = ['Background', 'Source']
-    dframe_location = f'{settings.bin_clf_dataframe_directory}{bins_per_sect}bps_{settings.kev_cap}' \
+    dframe_location = f'{settings.bin_clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}_bin.dframe'
     data_dict, model_data, labels, clf = {}, None, None, None
     try:
@@ -114,7 +114,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
             model_data = pickle.load(f)
         print('Load complete.')
     except FileNotFoundError:
-        print(f'Dataframe file not found. Creating a new one...')
+        print(f'Dataframe file not found. Creating a new one...\n')
         if feature_type == 'linfit':
             background_ml_set_a, background_ml_set_b = mlGetBinaryFeatures(background_ml_set,
                                                                            feature_type,
@@ -163,11 +163,11 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
         if scale:
             X = np.arctan(X)
         y = model_data['Type']
-        clf = mlFormBinaryModel(X, y, clf)
+        clf = mlFormCompleteBinaryModel(X, y, clf)
         return clf
 
 
-def mlFormBinaryModel(X, y, ml_bin_model):
+def mlFormCompleteBinaryModel(X, y, ml_bin_model):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2)
     ml_bin_model.fit(X_train, y_train)
     y_pred = ml_bin_model.predict(X_test)
@@ -202,11 +202,11 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
 def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args):
     import pickle
     ml_bin_model = None
-    mdl_location = f'{settings.bin_clf_model_directory}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
+    mdl_location = f'{settings.bin_clf_model_directory}{os.sep}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
-        print(f'\nLooking for {mdl_location}... ', end='')
+        print(f'\nLooking for {mdl_location}... ', end='\n')
         with open(mdl_location, 'rb') as f:
             ml_bin_model = pickle.load(f)
         print('File found.')

@@ -1,5 +1,5 @@
-from binary.mlbinclf import *
-from multilabel.mlclf import *
+from mlclf.binary import *
+from mlclf.multilabel import *
 from argparse import ArgumentParser
 from os import walk, path
 from utility.metrics import getClfMetrics
@@ -8,9 +8,10 @@ from config import settings
 
 
 def classify(**user_parsed_args):
+    #  Loading test spectra set
     test_spectrum_set, counter = [], 0
-    print(f'Checking for corrupted spectra files. '
-          f'Note: setting delete_corrupted is set to {settings.delete_corrupted}\n.')
+    print(f'Loading test spectra from {user_parsed_args["TestSet"]}.')
+    print(f'NOTE: setting delete_corrupted is set to {settings.delete_corrupted}\n')
     for root, dirs, files in walk(user_parsed_args['TestSet']):
         for file in files:
             if file.endswith('.sps'):
@@ -21,11 +22,14 @@ def classify(**user_parsed_args):
                         os.remove(sp.path)
                         continue
                 test_spectrum_set.append(sp)
-    print('Test files loaded:', len(test_spectrum_set), user_parsed_args['TestSet'])
+    print('Test files loaded:', len(test_spectrum_set))
+
+    #  Loading background reference spectrum
     bkg_spectrum = loadSpectrumData(user_parsed_args['Bkg'])
 
+    #  Test spectra set processing
     if test_spectrum_set:
-        print('Processing test spectra...')
+        print('\nProcessing test spectra...')
     for test_spectrum in test_spectrum_set:
         if test_spectrum.corrupted is False:
             test_spectrum.rebin().calcCountRate()
@@ -34,7 +38,9 @@ def classify(**user_parsed_args):
     if bkg_spectrum.corrupted is False:
         bkg_spectrum.rebin().calcCountRate()
 
-    print('Proceeding to binary spectra classification...')
+    #  Binary spectra classification
+    print('\nProceeding to binary spectra classification...')
+    print(f'Binary classification method selected: {user_parsed_args["MethodBinary"]}')
     bin_out = open(str(user_parsed_args['OutputBinary']), 'a+')
     bin_results, res = {}, None
     if user_parsed_args['MethodBinary'] == 'sigma':
@@ -42,7 +48,7 @@ def classify(**user_parsed_args):
             res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
             bin_results[test_spectrum.path] = res
             bin_out.write(f'{test_spectrum.path:<60} {bkg_spectrum.path:<40} '
-                      f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
+                          f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
     elif 'ml' in user_parsed_args['MethodBinary']:
         bin_results = mlBinaryClassifier(test_spectrum_set,
                                          bin_out,
@@ -52,8 +58,10 @@ def classify(**user_parsed_args):
     else:
         print('\nRequested binary classification method not supported.')
 
+    #  Multi-label spectra classification
     if not settings.bin_clf_only:
-        print('Binary spectra classification completed. Proceeding to multi-label classification...')
+        print('\nBinary spectra classification complete. Proceeding to multi-label classification...')
+        print(f'Multilabel classification method selected: {user_parsed_args["Method"]}')
         no_bkg_test_spectrum_set = []
         clf_out = open(str(user_parsed_args['Output']), 'a+')
         for sp in test_spectrum_set:
@@ -72,6 +80,7 @@ def classify(**user_parsed_args):
 
 
 if __name__ == '__main__':
+    #  CLI Parser
     parser = ArgumentParser(description='Spectra ML Classificator')
     parser.add_argument('-T', '--TestSet',
                         help='location of spectra set to be tested',

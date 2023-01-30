@@ -28,7 +28,7 @@ def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, lo
             elif method == 'pearson':
                 res = spectrum.pearsonBinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
             elif method == 'chi2square':
-                res = spectrum.chi2squareBinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
+                res = spectrum.chi2BinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
             if res == 'Signal':
                 tp += 1
             if res == 'Background':
@@ -41,7 +41,7 @@ def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, lo
             elif method == 'pearson':
                 res = spectrum.pearsonBinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
             elif method == 'chi2square':
-                res = spectrum.chi2squareBinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
+                res = spectrum.chi2BinaryClassify(bkg_sp_reference, tolerance=tolerance, los=los)
             if res == 'Signal':
                 fn += 1
             if res == 'Background':
