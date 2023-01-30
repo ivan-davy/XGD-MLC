@@ -3,13 +3,12 @@ import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
 from scipy import optimize
-from config import ml_bin_clf_bins_per_section, kev_cap, clf_display_threshold
-import isodata
+from config import settings, isodata
 
 
 def plotAllBinData(spectrum):
     fig, axs = plt.subplots(2, 2, constrained_layout=True)
-    fig.suptitle(spectrum.location)
+    fig.suptitle(spectrum.path)
     axs[0, 0].set(xlabel='ADC bins', ylabel='Events per bin')
     x_bin = np.arange(0, spectrum.channel_qty)
     axs[0, 0].step(x_bin, spectrum.bin_data, color='red')
@@ -162,7 +161,7 @@ def plotBinaryClassificationResults(method='sigma'):
     plt.show()
 
 
-def mlShowLinfit(spectrum, sp_a, sp_b, bins_per_sect=ml_bin_clf_bins_per_section):
+def mlShowLinfit(spectrum, sp_a, sp_b, bins_per_sect=settings.ml_bin_clf_bins_per_section):
     from visual import linear
     from matplotlib import pyplot as plt
     from matplotlib.lines import Line2D
@@ -183,7 +182,7 @@ def mlShowLinfit(spectrum, sp_a, sp_b, bins_per_sect=ml_bin_clf_bins_per_section
     plt.show()
 
 
-def mlShowAverage(spectrum, sp_c, bins_per_sect=ml_bin_clf_bins_per_section):
+def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_section):
     from matplotlib import pyplot as plt
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)
@@ -210,9 +209,9 @@ def plotClassificationResults(spectrum, results):
     fig.set_size_inches(10, 6)
     plt.grid(True)
     plt.rcParams['font.family'] = 'monospace'
-    fig.suptitle(spectrum.location, weight='bold')
+    fig.suptitle(spectrum.path, weight='bold')
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
-    plt.xlim(0, kev_cap)
+    plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
     plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
     plt.ylabel('Count rate')
@@ -220,7 +219,7 @@ def plotClassificationResults(spectrum, results):
 
     isotope_lines = []
     for key, value in results.items():
-        if value > clf_display_threshold:
+        if value > settings.clf_display_threshold:
             for i in range(len(isodata.clf_isotopes[key].peaks)):
                 line = plt.vlines(isodata.clf_isotopes[key].peaks[i],
                                   0,

@@ -1,5 +1,5 @@
 from datetime import date
-from isoclass import Isotope
+from classes.isoclass import Isotope
 
 
 clf_proba_custom_multipliers = {  # >: more detections, <: less detections

@@ -1,48 +1,47 @@
-from utility.common import loadSpectrumData
-from spclass import *
+from utility.data import loadSpectrumData
+from classes.spclass import *
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score
 import pickle
 import pandas as pd
-import config
+from config import settings
 import numpy as np
 import os
-
 from visual import mlShowLinfit, mlShowAverage
 
 
 def mlLoadBinarySets():
     from os import walk, path
     source_sp_set, background_sp_set = [], []
-    for root, dirs, files in walk(config.src_fileset_location):
+    for root, dirs, files in walk(settings.src_fileset_location):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
                 if not any(sp.bin_data):
-                    print(f'CORRUPTED: {sp.location}')
-                    if config.delete_corrupted:
-                        os.remove(sp.location)
+                    print(f'CORRUPTED: {sp.path}')
+                    if settings.delete_corrupted:
+                        os.remove(sp.path)
                         continue
                 sp.has_source = True
                 source_sp_set.append(sp)
-    for root, dirs, files in walk(config.bkg_fileset_location):
+    for root, dirs, files in walk(settings.bkg_fileset_location):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
                 if not any(sp.bin_data):
-                    print(f'CORRUPTED: {sp.location}')
-                    if config.delete_corrupted:
-                        os.remove(sp.location)
+                    print(f'CORRUPTED: {sp.path}')
+                    if settings.delete_corrupted:
+                        os.remove(sp.path)
                         continue
                 sp.has_source = False
                 background_sp_set.append(sp)
     return source_sp_set, background_sp_set
 
 
-def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
+def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
                         show_progress=True,
                         show=False):
-    num_of_sections = int(config.kev_cap / bins_per_sect)
+    num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'linfit':
         from visual import linear
         from scipy.optimize import curve_fit
@@ -66,7 +65,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bi
             set_a.append(spectrum_a)
             set_b.append(spectrum_b)
             if show_progress:
-                print('\r', counter, '/', len(ml_set), spectrum.location, end='')
+                print('\r', counter, '/', len(ml_set), spectrum.path, end='')
         if show_progress:
             print('\n')
         return set_a, set_b
@@ -88,16 +87,16 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=config.ml_bin_clf_bi
                 mlShowAverage(spectrum, spectrum_c, bins_per_sect)
             set_c.append(spectrum_c)
             if show_progress:
-                print('\r', counter, '/', len(ml_set), spectrum.location, end='')
+                print('\r', counter, '/', len(ml_set), spectrum.path, end='')
         if show_progress:
             print('\n')
         return set_c
 
 
 def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
-                        bins_per_sect=config.ml_bin_clf_bins_per_section,
+                        bins_per_sect=settings.ml_bin_clf_bins_per_section,
                         scale=True, show=False):
-    num_of_sections = int(config.kev_cap / bins_per_sect)
+    num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'linfit':
         feature_names = [f'A{segment}' for segment in range(num_of_sections)] + \
                         [f'B{segment}' for segment in range(num_of_sections)]
@@ -106,7 +105,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
     else:
         feature_names = None
     label_names = ['Background', 'Source']
-    dframe_location = f'{config.bin_clf_dataframe_directory}{bins_per_sect}bps_{config.kev_cap}' \
+    dframe_location = f'{settings.bin_clf_dataframe_directory}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}_bin.dframe'
     data_dict, model_data, labels, clf = {}, None, None, None
     try:
@@ -178,7 +177,7 @@ def mlFormBinaryModel(X, y, ml_bin_model):
     return ml_bin_model
 
 
-def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
+def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
                            scale=True,
                            show=False):
     X_test = None
@@ -203,7 +202,7 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
 def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args):
     import pickle
     ml_bin_model = None
-    mdl_location = f'{config.bin_clf_model_directory}{config.ml_bin_clf_bins_per_section}bps_{config.kev_cap}_kev' \
+    mdl_location = f'{settings.bin_clf_model_directory}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
@@ -227,12 +226,12 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
-                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.path, end='')
             res = mlBinaryClassification(test_spectrum, ml_bin_model,
                                          user_args["FeatureBinary"],
                                          scale=user_args["Scale"])
-            results[test_spectrum.location] = res
-            out.write(f'{test_spectrum.location:<100} {mdl_location:<40} '
+            results[test_spectrum.path] = res
+            out.write(f'{test_spectrum.path:<100} {mdl_location:<40} '
                       f'{user_args["MethodBinary"]:<15} {res:<10}\n')
-        print(f'\nBinary classification results exported to {config.bin_clf_report_location}')
+        print(f'\nBinary classification results exported to {settings.bin_clf_report_location}')
         return results

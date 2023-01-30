@@ -1,40 +1,39 @@
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
-import config
 import pickle
 import pandas as pd
 import numpy as np
-import isodata
+from config import isodata, settings
 from visual import mlShowAverage, plotClassificationResults
-from utility.common import loadSpectrumData
+from utility.data import loadSpectrumData
 import os
 
 
 def mlLoadSets():
     from os import walk, path, scandir
     sp_set = {}
-    subdirs = [f.path for f in scandir(f'{config.src_fileset_location}') if f.is_dir()]
+    subdirs = [f.path for f in scandir(f'{settings.src_fileset_location}') if f.is_dir()]
     for subdir in subdirs:
         for root, dirs, files in walk(subdir):
             for file in files:
                 if file.endswith('.sps'):
                     dir_name = subdir.rsplit(os.sep, 1)[-1]
-                    if config.test_fileset_location not in dir_name:
+                    if settings.test_fileset_location not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
-                            print(f'CORRUPTED: {sp.location}')
-                            if config.delete_corrupted:
-                                os.remove(sp.location)
+                            print(f'CORRUPTED: {sp.path}')
+                            if settings.delete_corrupted:
+                                os.remove(sp.path)
                                 continue
                         known_isotope = isodata.clf_isotopes[dir_name]
                         sp.isotope = known_isotope
-                        sp_set[sp.location] = sp
+                        sp_set[sp.path] = sp
     return sp_set
 
 
-def mlGetFeatures(spectrum, feature_type, bins_per_sect=config.ml_bin_clf_bins_per_section,
+def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
                   show=False):
-    num_of_sections = int(config.kev_cap / bins_per_sect)
+    num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'average':
         spectrum_c = []
         if spectrum.corrupted is False:
@@ -48,15 +47,19 @@ def mlGetFeatures(spectrum, feature_type, bins_per_sect=config.ml_bin_clf_bins_p
         return spectrum_c
 
 
-def mlCreateModel(sp_set, feature_type, method,
-                  bins_per_sect=config.ml_clf_bins_per_section,
-                  scale=True, show=False, show_progress=True):
-    num_of_sections = int(config.kev_cap / bins_per_sect)
+def mlCreateModel(sp_set,
+                  feature_type,
+                  method,
+                  bins_per_sect=settings.ml_clf_bins_per_section,
+                  scale=True,
+                  show=False,
+                  show_progress=True):
+    num_of_sections = int(settings.kev_cap / bins_per_sect)
     feature_names = None
     if feature_type == 'average':
         feature_names = [f'C{segment}' for segment in range(num_of_sections)]
 
-    dframe_location = f'{config.clf_dataframe_directory}{bins_per_sect}bps_{config.kev_cap}' \
+    dframe_location = f'{settings.clf_dataframe_directory}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}.dframe'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
@@ -109,11 +112,12 @@ def mlCreateModel(sp_set, feature_type, method,
             from sklearn.linear_model import LogisticRegression
             clf = MultiOutputClassifier(LogisticRegression())
         X = np.array(dataframe.values)
-        y_bin = np.matrix(y_bin)
         if scale:
             X = np.arctan(X)
+        print(f'{X=}'
+              f'{y_bin=}'
+              f'{clf=}')
         clf = mlFormModel(X, y_bin, clf)
-        print(clf)
         return clf
 
 
@@ -126,7 +130,7 @@ def mlFormModel(X, y, ml_clf_model):
     return ml_clf_model
 
 
-def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config.ml_clf_bins_per_section,
+def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_clf_bins_per_section,
                      scale=True,
                      show=False):
     X_test = None
@@ -144,7 +148,7 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=config
 def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
     import pickle
     ml_clf_model = None
-    mdl_location = f'{config.clf_model_directory}{config.ml_clf_bins_per_section}bps_{config.kev_cap}_kev' \
+    mdl_location = f'{settings.clf_model_directory}{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_clf.mdl'
     try:
@@ -170,7 +174,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
-                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.location, end='')
+                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.path, end='')
 
             test_spectrum_result = {}
             res_proba = mlClassification(test_spectrum, ml_clf_model,
@@ -184,18 +188,18 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                 test_spectrum_result[key] = round(custom_proba, 3)
                 i += 1
 
-            results[test_spectrum.location] = test_spectrum_result
+            results[test_spectrum.path] = test_spectrum_result
             sorted_result_keys = sorted(test_spectrum_result, key=test_spectrum_result.get, reverse=True)
             test_spectrum_result_sorted = {}
             for w in sorted_result_keys:
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
             # print(test_spectrum.location, test_spectrum_result_sorted)
-            out.write(f'{test_spectrum.location:<100} '
-                      f'{config.ml_clf_bins_per_section:<3}bps '
+            out.write(f'{test_spectrum.path:<100} '
+                      f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
                       f'{test_spectrum_result_sorted}\n')
             if show_results:
                 plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
-        print(f'\nClassification results exported to {config.clf_report_location}')
+        print(f'\nClassification results exported to {settings.clf_report_location}')
         return results
