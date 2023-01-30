@@ -5,13 +5,15 @@ from os import walk, path
 from utility.metrics import getClfMetrics
 from utility.data import loadSpectrumData
 from config import settings
+from simple_chalk import chalk
+from const import const
 
 
 def classify(**user_parsed_args):
     #  Loading test spectra set
     test_spectrum_set, counter = [], 0
-    print(f'Loading test spectra from {user_parsed_args["TestSet"]}.')
-    print(f'NOTE: setting delete_corrupted is set to {settings.delete_corrupted}\n')
+    print(chalk.red(f'NOTE: setting delete_corrupted is set to {settings.delete_corrupted}\n'))
+    print(chalk.blue(f'Loading test spectra from {user_parsed_args["TestSet"]}.'))
     for root, dirs, files in walk(user_parsed_args['TestSet']):
         for file in files:
             if file.endswith('.sps'):
@@ -29,7 +31,7 @@ def classify(**user_parsed_args):
 
     #  Test spectra set processing
     if test_spectrum_set:
-        print('\nProcessing test spectra...')
+        print(chalk.blue('\nProcessing test spectra...'))
     for test_spectrum in test_spectrum_set:
         if test_spectrum.corrupted is False:
             test_spectrum.rebin().calcCountRate()
@@ -39,47 +41,59 @@ def classify(**user_parsed_args):
         bkg_spectrum.rebin().calcCountRate()
 
     #  Binary spectra classification
-    print('\nProceeding to binary spectra classification...')
-    print(f'Binary classification method selected: {user_parsed_args["MethodBinary"]}')
+    print(chalk.blue('\n\nProceeding to binary spectra classification...'))
+    print(f'Binary classification method selected: {chalk.cyan(user_parsed_args["MethodBinary"])}')
+    print(f'Binary classification feature selected: {chalk.cyan(user_parsed_args["FeatureBinary"])}')
     bin_out = open(str(user_parsed_args['OutputBinary']), 'a+')
     bin_results, res = {}, None
-    if user_parsed_args['MethodBinary'] == 'sigma':
-        for test_spectrum in test_spectrum_set:
-            res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
-            bin_results[test_spectrum.path] = res
-            bin_out.write(f'{test_spectrum.path:<60} {bkg_spectrum.path:<40} '
-                          f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
-    elif 'ml' in user_parsed_args['MethodBinary']:
-        bin_results = mlBinaryClassifier(test_spectrum_set,
-                                         bin_out,
-                                         show=False,
-                                         show_progress=True,
-                                         **user_parsed_args)
+    if user_parsed_args["MethodBinary"] in const.supported_binary_clf_methods and user_parsed_args["FeatureBinary"] \
+            in const.supported_binary_clf_features:
+        if user_parsed_args['MethodBinary'] == 'sigma':
+            for test_spectrum in test_spectrum_set:
+                res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
+                bin_results[test_spectrum.path] = res
+                bin_out.write(f'{test_spectrum.path:<60} {bkg_spectrum.path:<40} '
+                              f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
+        elif 'ml' in user_parsed_args['MethodBinary']:
+            bin_results = mlBinaryClassifier(test_spectrum_set,
+                                             bin_out,
+                                             show=False,
+                                             show_progress=True,
+                                             **user_parsed_args)
     else:
-        print('\nRequested binary classification method not supported.')
+        print(chalk.redBright('\nRequested binary classification method / feature not supported.'))
+        exit()
 
     #  Multi-label spectra classification
     if not settings.bin_clf_only:
-        print('\nBinary spectra classification complete. Proceeding to multi-label classification...')
-        print(f'Multilabel classification method selected: {user_parsed_args["Method"]}')
-        no_bkg_test_spectrum_set = []
-        clf_out = open(str(user_parsed_args['Output']), 'a+')
-        for sp in test_spectrum_set:
-            if bin_results[sp.path] == 'Source':
-                no_bkg_test_spectrum_set.append(sp)
-        clf_results = mlClassifier(no_bkg_test_spectrum_set,
-                                   clf_out,
-                                   show=False,
-                                   show_progress=True,
-                                   show_results=False,
-                                   **user_parsed_args)
-        getClfMetrics(clf_results,
-                      show_results=True,
-                      **user_parsed_args)
+        print(chalk.blue('\nBinary spectra classification complete. Proceeding to multi-label classification...'))
+        if user_parsed_args["Method"] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
+                in const.supported_multilabel_clf_features:
+            print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
+            print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}')
+
+            no_bkg_test_spectrum_set = []
+            clf_out = open(str(user_parsed_args['Output']), 'a+')
+            for sp in test_spectrum_set:
+                if bin_results[sp.path] == 'Source':
+                    no_bkg_test_spectrum_set.append(sp)
+            clf_results = mlClassifier(no_bkg_test_spectrum_set,
+                                       clf_out,
+                                       show=False,
+                                       show_progress=True,
+                                       show_results=False,
+                                       **user_parsed_args)
+            getClfMetrics(clf_results,
+                          show_results=True,
+                          **user_parsed_args)
+        else:
+            print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
+            exit()
     return res
 
 
 if __name__ == '__main__':
+    print(chalk.yellow('Starting XGD-MLC...'))
     #  CLI Parser
     parser = ArgumentParser(description='Spectra ML Classificator')
     parser.add_argument('-T', '--TestSet',

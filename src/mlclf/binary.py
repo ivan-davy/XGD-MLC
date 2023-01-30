@@ -8,6 +8,7 @@ from config import settings
 import numpy as np
 from utility.data import loadSpectrumData
 from utility.visual import mlShowLinfit, mlShowAverage
+from simple_chalk import chalk
 
 
 def mlLoadBinarySets():
@@ -18,7 +19,7 @@ def mlLoadBinarySets():
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
                 if not any(sp.bin_data):
-                    print(f'CORRUPTED: {sp.path}')
+                    print(chalk.redBright(f'CORRUPTED: {sp.path}'))
                     if settings.delete_corrupted:
                         os.remove(sp.path)
                         continue
@@ -29,7 +30,7 @@ def mlLoadBinarySets():
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
                 if not any(sp.bin_data):
-                    print(f'CORRUPTED: {sp.path}')
+                    print(chalk.redBright(f'CORRUPTED: {sp.path}'))
                     if settings.delete_corrupted:
                         os.remove(sp.path)
                         continue
@@ -65,7 +66,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=settings.ml_bin_clf_
             set_a.append(spectrum_a)
             set_b.append(spectrum_b)
             if show_progress:
-                print('\r', counter, '/', len(ml_set), spectrum.path, end='')
+                print('\r', chalk.cyan(counter), '/', len(ml_set), spectrum.path, end='')
         if show_progress:
             print('\n')
         return set_a, set_b
@@ -109,12 +110,12 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
                       f'keV_{feature_type}_bin.dframe'
     data_dict, model_data, labels, clf = {}, None, None, None
     try:
-        print(f'Looking for {dframe_location}...')
+        print(chalk.blue(f'Looking for {dframe_location}...'))
         with open(dframe_location, 'rb') as f:
             model_data = pickle.load(f)
-        print('Load complete.')
+        print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(f'Dataframe file not found. Creating a new one...\n')
+        print(chalk.red(f'Dataframe file not found.'), 'Creating a new one...\n')
         if feature_type == 'linfit':
             background_ml_set_a, background_ml_set_b = mlGetBinaryFeatures(background_ml_set,
                                                                            feature_type,
@@ -171,8 +172,8 @@ def mlFormCompleteBinaryModel(X, y, ml_bin_model):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2)
     ml_bin_model.fit(X_train, y_train)
     y_pred = ml_bin_model.predict(X_test)
-    print('Confusion matrix:\n', confusion_matrix(y_test, y_pred), '\n')
-    print('Accuracy:', accuracy_score(y_test, y_pred))
+    print(chalk.cyan('Confusion matrix:\n'), confusion_matrix(y_test, y_pred), '\n')
+    print(chalk.cyan('Accuracy:'), accuracy_score(y_test, y_pred))
     ml_bin_model.fit(X, y)
     return ml_bin_model
 
@@ -206,12 +207,12 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
-        print(f'\nLooking for {mdl_location}... ', end='\n')
+        print(chalk.blue(f'\nLooking for {mdl_location}... '), end='')
         with open(mdl_location, 'rb') as f:
             ml_bin_model = pickle.load(f)
-        print('File found.')
+        print(chalk.green('File found.'))
     except FileNotFoundError:
-        print(f'Model file not found. Creating a new one...')
+        print(chalk.red(f'\nModel file not found. '), 'Creating a new one...')
         sp_ml_set, bkg_ml_set = mlLoadBinarySets()
         ml_bin_model = mlCreateBinaryModel(sp_ml_set, bkg_ml_set,
                                            user_args["FeatureBinary"],
@@ -220,7 +221,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
                                            show=show)
         with open(mdl_location, 'wb') as f:
             pickle.dump(ml_bin_model, f)
-        print('Done!')
+        print(chalk.green('Done!'))
     finally:
         results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
@@ -233,5 +234,5 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
             results[test_spectrum.path] = res
             out.write(f'{test_spectrum.path:<100} {mdl_location:<40} '
                       f'{user_args["MethodBinary"]:<15} {res:<10}\n')
-        print(f'\nBinary classification results exported to {settings.bin_clf_report_location}')
+        print(chalk.green(f'\nBinary classification results exported to {settings.bin_clf_report_location}'))
         return results

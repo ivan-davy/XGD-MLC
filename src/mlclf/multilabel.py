@@ -7,6 +7,7 @@ from config import isodata, settings
 from utility.visual import mlShowAverage, plotClassificationResults
 from utility.data import loadSpectrumData
 import os
+from simple_chalk import chalk
 
 
 def mlLoadSets():
@@ -21,7 +22,7 @@ def mlLoadSets():
                     if str(settings.test_fileset_location) not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
-                            print(f'CORRUPTED: {sp.path}')
+                            print(chalk.redBright(f'CORRUPTED: {sp.path}'))
                             if settings.delete_corrupted:
                                 os.remove(sp.path)
                                 continue
@@ -63,14 +64,14 @@ def mlCreateModel(sp_set,
                       f'keV_{feature_type}.dframe'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
-        print(f'Looking for {dframe_location}...')
+        print(chalk.blue(f'Looking for {dframe_location}...'))
         with open(dframe_location, 'rb') as f:
             data = pickle.load(f)
             dataframe = data['dataframe']
             y = data['labels']
-        print('Load complete.')
+        print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(f'Dataframe file not found. Creating a new one...\n')
+        print(chalk.red(f'\nDataframe file not found. '), 'Creating a new one...\n')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -122,7 +123,7 @@ def mlFormCompleteModel(X, y, ml_clf_model):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2)
     ml_clf_model.fit(X_train, y_train)
     y_pred = ml_clf_model.predict(X_test)
-    print('Accuracy:', accuracy_score(y_test, y_pred))
+    print(chalk.cyan('Accuracy:'), accuracy_score(y_test, y_pred))
     ml_clf_model.fit(X, y)
     return ml_clf_model
 
@@ -150,12 +151,12 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_clf.mdl'
     try:
-        print(f'Looking for {mdl_location}... ', end='')
+        print(chalk.blue(f'Looking for {mdl_location}... '), end='')
         with open(mdl_location, 'rb') as f:
             ml_clf_model = pickle.load(f)
-        print('File found.')
+        print(chalk.green('File found.'))
     except FileNotFoundError:
-        print(f'\nModel file not found. Creating a new one...')
+        print(chalk.red(f'\nModel file not found. '), 'Creating a new one...')
         sp_set = mlLoadSets()
         ml_clf_model = mlCreateModel(sp_set,
                                      user_args["Feature"],
@@ -165,9 +166,9 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                                      show_progress=show_progress)
         with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
-        print('Done!')
+        print(chalk.green('Done!'))
     finally:
-        print('\nProcessing data...')
+        print(chalk.blue('\nProcessing data...'))
         results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
             if show_progress:
@@ -198,5 +199,5 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                       f'{test_spectrum_result_sorted}\n')
             if show_results:
                 plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
-        print(f'\nClassification results exported to {settings.clf_report_location}')
+        print(chalk.green(f'\nClassification results exported to {settings.clf_report_location}'))
         return results

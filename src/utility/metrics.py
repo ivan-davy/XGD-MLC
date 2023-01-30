@@ -1,22 +1,23 @@
 from config import settings
 from config.isodata import clf_isotopes
+from simple_chalk import chalk
 
 
 def checkTotalEvents(spectrum):
-    print('Total area:')
+    print(chalk.cyan('Total area: '))
     s = 0
     for i in range(spectrum.channel_qty):
         s += spectrum.bin_data[i]
-    print('Uncalibrated: ', s)
+    print(chalk.cyan('Uncalibrated: ', s))
     if settings.keep_redundant_data is True:
         s = 0
         for i in range(len(spectrum.calib_bins) - 1):
             s += (spectrum.calib_bins[i + 1] - spectrum.calib_bins[i]) * spectrum.calib_bin_data[i]
-        print('Calibrated: ', s)
+        print(chalk.cyan('Calibrated: ', s))
     s = 0
     for i in range(len(spectrum.rebin_bins) - 1):
         s += (spectrum.rebin_bins[i + 1] - spectrum.rebin_bins[i]) * spectrum.rebin_bin_data[i]
-    print('Rebinned: ', s)
+    print(chalk.cyan('Rebinned: ', s))
 
 
 def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, los):
@@ -47,13 +48,15 @@ def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, lo
             if res == 'Background':
                 tn += 1
     accuracy = (tp + tn) / (tp + tn + fp + fn)
-    print(f'\nAccuracy ({method}, {tolerance=}, {los=}): {accuracy}')
+    print(chalk.cyan(f'\nAccuracy ({method}, {tolerance=}, {los=}):'), f'{accuracy}')
     print([tp, fp], '\n', [fn, tn])
     return [[tp, fp], [fn, tn]], accuracy
 
 
 def getClfMetrics(results, show_results=True, **user_args):
-    print(f'Calculating statistics... (clf_threshold={settings.clf_threshold})\n')
+    print(chalk.blue('Calculating statistics... ('),
+                     chalk.cyan(f'clf_threshold={settings.clf_threshold}'),
+                     chalk.blue(')\n'))
 
     matches = 0
     for key, val in results.items():
@@ -101,11 +104,11 @@ def getClfMetrics(results, show_results=True, **user_args):
         total_sum += accuracy
 
     if show_results:
-        print(f'EMR: {matches/len(results.keys())}')
-        print(f'Precision: {total_sum/len(results.keys())}')
-        print(f'Accuracy: {total_sum/len(results.keys())}')
+        print(chalk.cyan(f'EMR:'), matches/len(results.keys()))
+        print(chalk.cyan(f'Precision:'), total_sum/len(results.keys()))
+        print(chalk.cyan(f'Accuracy:'), total_sum/len(results.keys()))
 
-        print('\nPer-isotope accuracies:')
+        print(chalk.cyan('\nPer-isotope accuracies:'))
         for key in per_isotope_total:
             per_isotope_accuracies[key] = per_isotope_correctly_guessed[key] / per_isotope_total[key]
             print(f'{key}: {per_isotope_accuracies[key]}')

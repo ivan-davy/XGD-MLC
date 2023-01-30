@@ -16,8 +16,8 @@ bin_clf_report_location = Path('../reports/bin_clf_report.txt')
 bin_clf_sections_qty = 10
 ml_bin_clf_bins_per_section = 25
 
-bin_clf_feature_type = 'average'  # average, linfit
-bin_clf_method = 'mlrf'  # sigma, mlrf, mldt, mllgr
+bin_clf_feature_type = 'average'  # see const.const.supported_binary_clf_features
+bin_clf_method = 'mlrf'  # see const.const.supported_binary_clf_methods
 
 ###
 
@@ -27,8 +27,8 @@ clf_report_location = Path('../reports/clf_report.txt')
 
 ml_clf_bins_per_section = 5
 
-clf_feature_type = 'average'  # average
-clf_method = 'mllgr'  # mllgr, mldt, mlrf
+clf_feature_type = 'average'  # see const.const.supported_multilabel_clf_features
+clf_method = 'mllgr'  # see const.const.supported_multilabel_clf_methods
 
 clf_display_threshold = 0.01
 
