@@ -1,6 +1,8 @@
-dataframes/bin/
-dataframes/clf/
-models/bin/
-models/clf/
-reports/
-sps/
+dataframes/bin/*
+dataframes/clf/*
+models/bin/*
+models/clf/*
+reports/*
+sps/bkgs/*
+sps/srcs/*
+sps/test/*

@@ -1,21 +1,19 @@
-from sklearn.metrics import accuracy_score, confusion_matrix
+from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import config
 import pickle
 import pandas as pd
 import numpy as np
 import isodata
-from utility.relpath import relpath
 from visual import mlShowAverage, plotClassificationResults
 from utility.common import loadSpectrumData
-from scipy import *
 import os
 
 
 def mlLoadSets():
     from os import walk, path, scandir
     sp_set = {}
-    subdirs = [f.path for f in scandir(f'{relpath(config.src_fileset_location)}') if f.is_dir()]
+    subdirs = [f.path for f in scandir(f'{config.src_fileset_location}') if f.is_dir()]
     for subdir in subdirs:
         for root, dirs, files in walk(subdir):
             for file in files:
@@ -63,7 +61,7 @@ def mlCreateModel(sp_set, feature_type, method,
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
         print(f'Looking for {dframe_location}...')
-        with open(relpath(dframe_location), 'rb') as f:
+        with open(dframe_location, 'rb') as f:
             data = pickle.load(f)
             dataframe = data['dataframe']
             y = data['labels']
@@ -84,7 +82,7 @@ def mlCreateModel(sp_set, feature_type, method,
                     counter += 1
                     print('\r', counter, '/', len(sp_set), key, end='')
             dataframe = pd.DataFrame.from_dict(data_features_set, orient='index', columns=feature_names)
-        with open(relpath(dframe_location), 'wb+') as f:
+        with open(dframe_location, 'wb+') as f:
             pickle.dump({
                 'dataframe': dataframe,
                 'labels': y
@@ -115,6 +113,7 @@ def mlCreateModel(sp_set, feature_type, method,
         if scale:
             X = np.arctan(X)
         clf = mlFormModel(X, y_bin, clf)
+        print(clf)
         return clf
 
 
@@ -150,7 +149,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                    f'{user_args["Method"]}_{user_args["Feature"]}_clf.mdl'
     try:
         print(f'\nLooking for {mdl_location}... ', end='')
-        with open(relpath(mdl_location), 'rb') as f:
+        with open(mdl_location, 'rb') as f:
             ml_clf_model = pickle.load(f)
         print('File found.')
     except FileNotFoundError:
@@ -162,7 +161,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                                      scale=user_args["Scale"],
                                      show=False,
                                      show_progress=True)
-        with open(relpath(mdl_location), 'wb+') as f:
+        with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
         print('Done!')
     finally:

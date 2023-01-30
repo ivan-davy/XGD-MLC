@@ -1,7 +1,7 @@
+from scipy.stats import stats
 import numpy as np
-from scipy import stats
-from config import *
 from mlbinclf import *
+import config
 
 
 class Spectrum:
@@ -30,8 +30,8 @@ class Spectrum:
         if not self.corrupted:
             x = [i * self.cal[0] + self.cal[1] for i in range(self.channel_qty)]
             y = [self.bin_data[i] / self.cal[0] for i in range(len(self.bin_data))]
-            if keep_redundant_data is False:
-                x = x[:int(kev_cap * self.cal[0])]
+            if config.keep_redundant_data is False:
+                x = x[:int(config.kev_cap * self.cal[0])]
                 y = y[:len(x)]
             self.calib_bins = x
             self.calib_bin_data = y
@@ -76,8 +76,8 @@ class Spectrum:
                 if slices_in_new[i] is not None:
                     rebin_bin_data[slices_in_new[i]] += slices[i]
             del rebin_bin_data[max_kev:]
-            if keep_redundant_data is False:
-                rebin_bin_data = rebin_bin_data[:int(kev_cap)]
+            if config.keep_redundant_data is False:
+                rebin_bin_data = rebin_bin_data[:int(config.kev_cap)]
             self.rebin_bin_data = rebin_bin_data
         return self
 
@@ -91,13 +91,13 @@ class Spectrum:
     def cleanup(self):
         if self.corrupted:
             del self
-        elif keep_redundant_data is False:
+        elif config.keep_redundant_data is False:
             del self.calib_bins
             del self.calib_bin_data
-            if kev_cap != 0:
-                del self.rebin_bins[kev_cap:]
-                del self.rebin_bin_data[kev_cap:]
-                del self.count_rate_bin_data[kev_cap:]
+            if config.kev_cap != 0:
+                del self.rebin_bins[config.kev_cap:]
+                del self.rebin_bin_data[config.kev_cap:]
+                del self.count_rate_bin_data[config.kev_cap:]
 
     def subtractBkg(self, bkg):
         if bkg.count_rate_bin_data is None:
@@ -128,7 +128,7 @@ class Spectrum:
         else:
             return 'Background'
 
-    def pearsonBinaryClassify(self, bkg, num_of_sections=bin_clf_sections_qty,  # Ineffective method, not implemented
+    def pearsonBinaryClassify(self, bkg, num_of_sections=config.bin_clf_sections_qty,  # Ineffective method, not implemented
                               tolerance=1, los=0.05):
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
@@ -154,7 +154,7 @@ class Spectrum:
         else:
             return 'Background'
 
-    def chi2squareBinaryClassify(self, bkg, num_of_sections=bin_clf_sections_qty,  # Ineffective method, not implemented
+    def chi2squareBinaryClassify(self, bkg, num_of_sections=config.bin_clf_sections_qty,  # Ineffective method, not implemented
                                  tolerance=3, los=0.05):
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
