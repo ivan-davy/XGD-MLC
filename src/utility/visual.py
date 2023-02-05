@@ -43,7 +43,7 @@ def fitGaussCustom(x_data, y_data, x_range, guess, to_plot):
         if x_range[0] < x_data[i] < x_range[1]:
             x.append(x_data[i])
             y.append(y_data[i])
-    params, cov = optimize.curve_fit(np.vectorize(gaussCustom), x, y, p0=guess)
+    params, cov, *_ = optimize.curve_fit(np.vectorize(gaussCustom), x, y, p0=guess)
     print('Fit Parameters:')
     for p in range(len(params) - 1):
         print(params[p], ' +/- ', cov[p][p])
@@ -74,8 +74,8 @@ def fitAndPlot2GaussCustom(x_data1, y_data1, x_range1, guess1, x_data2, y_data2,
         if x_range2[0] < x_data2[i] < x_range2[1]:
             x2.append(x_data2[i])
             y2.append(y_data2[i])
-    params1, cov1 = optimize.curve_fit(np.vectorize(gaussCustom), x1, y1, p0=guess1)
-    params2, cov2 = optimize.curve_fit(np.vectorize(gaussCustom), x2, y2, p0=guess2)
+    params1, cov1, *_ = optimize.curve_fit(np.vectorize(gaussCustom), x1, y1, p0=guess1)
+    params2, cov2, *_ = optimize.curve_fit(np.vectorize(gaussCustom), x2, y2, p0=guess2)
     a1, b1, amp1, mu1, sig1 = params1[0], params1[1], params1[2], params1[3], params1[4]
     a2, b2, amp2, mu2, sig2 = params2[0], params2[1], params2[2], params2[3], params2[4]
     fit_data1 = [gaussCustom(x1[i], a1, b1, amp1, mu1, sig1) for i in range(len(x1))]
@@ -118,8 +118,9 @@ def plotCalcBkg(spectrum, bkg):
 
 def plotBinData(spectrum):
     fig, ax1 = plt.subplots(1)
+    ax1.set_title(spectrum.path)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
-    fig.canvas.manager.full_screen_toggle()
+    #  fig.canvas.manager.full_screen_toggle()
     plt.grid(True)
     plt.show()
 
@@ -162,7 +163,6 @@ def plotBinaryClassificationResults(method='sigma'):
 
 
 def mlShowLinfit(spectrum, sp_a, sp_b, bins_per_sect=settings.ml_bin_clf_bins_per_section):
-    from visual import linear
     from matplotlib import pyplot as plt
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)

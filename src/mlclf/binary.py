@@ -88,7 +88,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=settings.ml_bin_clf_
                 mlShowAverage(spectrum, spectrum_c, bins_per_sect)
             set_c.append(spectrum_c)
             if show_progress:
-                print('\r', counter, '/', len(ml_set), spectrum.path, end='')
+                print('\r', chalk.cyan(counter), '/', len(ml_set), spectrum.path, end='')
         if show_progress:
             print('\n')
         return set_c
@@ -107,7 +107,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
         feature_names = None
     label_names = ['Background', 'Source']
     dframe_location = f'{settings.bin_clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
-                      f'keV_{feature_type}_bin.dframe'
+                      f'keV_{feature_type}_bin.dfr'
     data_dict, model_data, labels, clf = {}, None, None, None
     try:
         print(chalk.blue(f'Looking for {dframe_location}...'))
@@ -179,8 +179,7 @@ def mlFormCompleteBinaryModel(X, y, ml_bin_model):
 
 
 def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
-                           scale=True,
-                           show=False):
+                           scale=True, show=False):
     X_test = None
     if feature_type == 'linfit':
         test_ml_a, test_ml_b = mlGetBinaryFeatures([test_spectrum],
@@ -223,11 +222,12 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
             pickle.dump(ml_bin_model, f)
         print(chalk.green('Done!'))
     finally:
+        print(chalk.blue('\nPerforming binary classification...'))
         results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
-                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.path, end='')
+                print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
             res = mlBinaryClassification(test_spectrum, ml_bin_model,
                                          user_args["FeatureBinary"],
                                          scale=user_args["Scale"])

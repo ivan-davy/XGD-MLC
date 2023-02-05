@@ -61,7 +61,7 @@ def mlCreateModel(sp_set,
         feature_names = [f'C{segment}' for segment in range(num_of_sections)]
 
     dframe_location = f'{settings.clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
-                      f'keV_{feature_type}.dframe'
+                      f'keV_{feature_type}_multi.dfr'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
         print(chalk.blue(f'Looking for {dframe_location}...'))
@@ -71,7 +71,7 @@ def mlCreateModel(sp_set,
             y = data['labels']
         print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(chalk.red(f'\nDataframe file not found. '), 'Creating a new one...\n')
+        print(chalk.red(f'Dataframe file not found. '), 'Creating a new one...\n')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -84,7 +84,7 @@ def mlCreateModel(sp_set,
                 y.append(value.isotope.name)
                 if show_progress:
                     counter += 1
-                    print('\r', counter, '/', len(sp_set), key, end='')
+                    print('\r', chalk.cyan(counter), '/', len(sp_set), key, end='')
             dataframe = pd.DataFrame.from_dict(data_features_set, orient='index', columns=feature_names)
         with open(dframe_location, 'wb+') as f:
             pickle.dump({
@@ -129,8 +129,7 @@ def mlFormCompleteModel(X, y, ml_clf_model):
 
 
 def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_clf_bins_per_section,
-                     scale=True,
-                     show=False):
+                     scale=True):
     X_test = None
     if feature_type == 'average':
         test_ml = mlGetFeatures(test_spectrum,
@@ -149,7 +148,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
     mdl_location = f'{settings.clf_model_directory}{os.sep}' \
                    f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
-                   f'{user_args["Method"]}_{user_args["Feature"]}_clf.mdl'
+                   f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
     try:
         print(chalk.blue(f'Looking for {mdl_location}... '), end='')
         with open(mdl_location, 'rb') as f:
@@ -168,12 +167,12 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
             pickle.dump(ml_clf_model, f)
         print(chalk.green('Done!'))
     finally:
-        print(chalk.blue('\nProcessing data...'))
+        print(chalk.blue('\nPerforming multilabel classification...'))
         results, counter = {}, 0
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
-                print('\r', counter, '/', len(test_spectrum_set), test_spectrum.path, end='')
+                print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
 
             test_spectrum_result = {}
             res_proba = mlClassification(test_spectrum, ml_clf_model,

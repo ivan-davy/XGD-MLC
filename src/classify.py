@@ -8,6 +8,9 @@ from config import settings
 from simple_chalk import chalk
 from const import const
 
+# TODO: Отрефакторить отчеты, ускорить ребиннинг, избавиться от лишних зависимостей,
+#   автосоздание папок, рабочий CLI, подобрать хорошие параметры, внедрить распознавание активности
+
 
 def classify(**user_parsed_args):
     #  Loading test spectra set
@@ -24,7 +27,7 @@ def classify(**user_parsed_args):
                         os.remove(sp.path)
                         continue
                 test_spectrum_set.append(sp)
-    print('Test files loaded:', len(test_spectrum_set))
+    print('Test files loaded:', chalk.cyan(len(test_spectrum_set)))
 
     #  Loading background reference spectrum
     bkg_spectrum = loadSpectrumData(user_parsed_args['Bkg'])
@@ -36,9 +39,11 @@ def classify(**user_parsed_args):
         if test_spectrum.corrupted is False:
             test_spectrum.rebin().calcCountRate()
             counter += 1
-            print('\r', counter, '/', len(test_spectrum_set), test_spectrum.path, end='')
+            #  plotBinData(test_spectrum)
+            print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
     if bkg_spectrum.corrupted is False:
         bkg_spectrum.rebin().calcCountRate()
+
 
     #  Binary spectra classification
     print(chalk.blue('\n\nProceeding to binary spectra classification...'))
@@ -65,30 +70,31 @@ def classify(**user_parsed_args):
         exit()
 
     #  Multi-label spectra classification
-    if not settings.bin_clf_only:
-        print(chalk.blue('\nBinary spectra classification complete. Proceeding to multi-label classification...'))
-        if user_parsed_args["Method"] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
-                in const.supported_multilabel_clf_features:
-            print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
-            print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}')
+    if settings.bin_clf_only:
+        return res
+    print(chalk.blue('\nProceeding to multi-label classification...'))
+    if user_parsed_args["Method"] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
+            in const.supported_multilabel_clf_features:
+        print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
+        print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}\n')
 
-            no_bkg_test_spectrum_set = []
-            clf_out = open(str(user_parsed_args['Output']), 'a+')
-            for sp in test_spectrum_set:
-                if bin_results[sp.path] == 'Source':
-                    no_bkg_test_spectrum_set.append(sp)
-            clf_results = mlClassifier(no_bkg_test_spectrum_set,
-                                       clf_out,
-                                       show=False,
-                                       show_progress=True,
-                                       show_results=False,
-                                       **user_parsed_args)
-            getClfMetrics(clf_results,
-                          show_results=True,
-                          **user_parsed_args)
-        else:
-            print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
-            exit()
+        no_bkg_test_spectrum_set = []
+        clf_out = open(str(user_parsed_args['Output']), 'a+')
+        for sp in test_spectrum_set:
+            if bin_results[sp.path] == 'Source':
+                no_bkg_test_spectrum_set.append(sp)
+        clf_results = mlClassifier(no_bkg_test_spectrum_set,
+                                   clf_out,
+                                   show=False,
+                                   show_progress=True,
+                                   show_results=user_parsed_args["Print"],
+                                   **user_parsed_args)
+        getClfMetrics(clf_results,
+                      show_results=user_parsed_args["Print"],
+                      **user_parsed_args)
+    else:
+        print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
+        exit()
     return res
 
 
@@ -139,6 +145,10 @@ if __name__ == '__main__':
     parser.add_argument('-f', '--FeatureBinary',
                         help='binary ML feature type',
                         default=settings.bin_clf_feature_type,
+                        type=str)
+    parser.add_argument('-p', '--Print',
+                        help='show results',
+                        default=settings.show_results,
                         type=str)
     args = vars(parser.parse_args())
     classify(**args)

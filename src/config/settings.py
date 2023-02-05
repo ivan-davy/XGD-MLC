@@ -21,8 +21,8 @@ bin_clf_method = 'mlrf'  # see const.const.supported_binary_clf_methods
 
 ###
 
-clf_model_directory = Path('../models/clf/')
-clf_dataframe_directory = Path('../dataframes/clf/')
+clf_model_directory = Path('../models/multi/')
+clf_dataframe_directory = Path('../dataframes/multi/')
 clf_report_location = Path('../reports/clf_report.txt')
 
 ml_clf_bins_per_section = 5
@@ -41,7 +41,8 @@ default_cal = [1.317870020866394, 0.1251399964094162]
 
 enforce_cal = True
 bin_clf_only = False
-show = False
+show_results = True
+
 ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)
 keep_redundant_data = False  # False is recommended

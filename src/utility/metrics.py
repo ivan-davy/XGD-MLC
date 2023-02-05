@@ -54,9 +54,9 @@ def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, lo
 
 
 def getClfMetrics(results, show_results=True, **user_args):
-    print(chalk.blue('Calculating statistics... ('),
+    print(chalk.blue('\nCalculating statistics... ('),
                      chalk.cyan(f'clf_threshold={settings.clf_threshold}'),
-                     chalk.blue(')\n'))
+                     chalk.blue(')'))
 
     matches = 0
     for key, val in results.items():

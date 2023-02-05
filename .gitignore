@@ -1,7 +1,7 @@
 dataframes/bin/*
-dataframes/clf/*
+dataframes/multi/*
 models/bin/*
-models/clf/*
+models/multi/*
 reports/*
 sps/bkgs/*
 sps/srcs/*
