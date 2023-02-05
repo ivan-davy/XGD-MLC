@@ -29,9 +29,20 @@ class Spectrum:
 
     def calibrate(self):
         if not self.corrupted:
+            x = (np.arange(self.channel_qty) * self.cal[0] + self.cal[1]).tolist()
+            y = (np.array(self.bin_data) / self.cal[0]).tolist()
+            if not settings.keep_redundant_data:
+                x = x[:int(settings.kev_cap * self.cal[0])]
+                y = y[:len(x)]
+            self.calib_bins = x
+            self.calib_bin_data = y
+        return self
+
+    def calibrate_naive(self):
+        if not self.corrupted:
             x = [i * self.cal[0] + self.cal[1] for i in range(self.channel_qty)]
             y = [self.bin_data[i] / self.cal[0] for i in range(len(self.bin_data))]
-            if settings.keep_redundant_data is False:
+            if not settings.keep_redundant_data:
                 x = x[:int(settings.kev_cap * self.cal[0])]
                 y = y[:len(x)]
             self.calib_bins = x

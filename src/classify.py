@@ -98,9 +98,9 @@ def classify(**user_parsed_args):
 
 
 if __name__ == '__main__':
-    print(chalk.yellow('Starting XGD-MLC...'))
-    #  CLI Parser
-    parser = ArgumentParser(description='Spectra ML Classificator')
+    print(chalk.yellow('Starting GS-MLC...'))
+    #  CLI input parser
+    parser = ArgumentParser(description='Gamma-Spectra Machine Learning Classifier')
     parser.add_argument('-T', '--TestSet',
                         help='location of spectra set to be tested',
                         default=settings.test_fileset_location,

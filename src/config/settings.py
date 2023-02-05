@@ -37,9 +37,9 @@ clf_threshold = 0.6
 ###
 
 kev_cap = 1500
-default_cal = [1.317870020866394, 0.1251399964094162]
+default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manually with enforce-cal set to True
 
-enforce_cal = True
+enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
 bin_clf_only = False
 show_results = True
 

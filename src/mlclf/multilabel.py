@@ -146,7 +146,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
     import pickle
     ml_clf_model = None
     mdl_location = f'{settings.clf_model_directory}{os.sep}' \
-                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
+                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
     try:

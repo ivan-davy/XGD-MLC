@@ -202,7 +202,7 @@ def mlBinaryClassification(test_spectrum, ml_model, feature_type, bins_per_sect=
 def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args):
     import pickle
     ml_bin_model = None
-    mdl_location = f'{settings.bin_clf_model_directory}{os.sep}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}_kev' \
+    mdl_location = f'{settings.bin_clf_model_directory}{os.sep}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
