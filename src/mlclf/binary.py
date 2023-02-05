@@ -173,7 +173,7 @@ def mlFormCompleteBinaryModel(X, y, ml_bin_model):
     ml_bin_model.fit(X_train, y_train)
     y_pred = ml_bin_model.predict(X_test)
     print(chalk.cyan('Confusion matrix:\n'), confusion_matrix(y_test, y_pred), '\n')
-    print(chalk.cyan('Accuracy:'), accuracy_score(y_test, y_pred))
+    print('Preliminary model accuracy:', chalk.cyan(accuracy_score(y_test, y_pred)))
     ml_bin_model.fit(X, y)
     return ml_bin_model
 

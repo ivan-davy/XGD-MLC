@@ -123,7 +123,7 @@ def mlFormCompleteModel(X, y, ml_clf_model):
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.25, random_state=2)
     ml_clf_model.fit(X_train, y_train)
     y_pred = ml_clf_model.predict(X_test)
-    print(chalk.cyan('Accuracy:'), accuracy_score(y_test, y_pred))
+    print('\nPreliminary model accuracy:', chalk.cyan(accuracy_score(y_test, y_pred)))
     ml_clf_model.fit(X, y)
     return ml_clf_model
 

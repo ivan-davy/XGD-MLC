@@ -37,7 +37,7 @@ class Spectrum:
             self.calib_bins = x
             self.calib_bin_data = y
 
-    def rebin(self):
+    def rebin_naive(self):
         self.calibrate()
         if not self.corrupted:
             x_old = self.calib_bins
@@ -80,6 +80,50 @@ class Spectrum:
             if settings.keep_redundant_data is False:
                 rebin_bin_data = rebin_bin_data[:int(settings.kev_cap)]
             self.rebin_bin_data = rebin_bin_data
+        return self
+
+    def rebin(self):  # adapted version of https://github.com/jhykes/rebin
+        self.calibrate()
+        if not self.corrupted:
+            self.rebin_bins = np.arange(self.calib_bins[-1]).tolist()
+            x1 = np.asarray(self.calib_bins)
+            y1 = np.asarray(self.calib_bin_data)
+            x2 = np.asarray(np.arange(self.calib_bins[-1]))
+
+            # the fractional bin locations of the new bins in the old bins
+            i_place = np.interp(x2, x1, np.arange(len(x1)))
+            cum_sum = np.r_[[0], np.cumsum(y1)]
+
+            # calculate bins where lower and upper bin edges span
+            # greater than or equal to one original bin.
+            # This is the contribution from the 'intact' bins (not including the
+            # fractional start and end parts).
+            whole_bins = np.floor(i_place[1:]) - np.ceil(i_place[:-1]) >= 1.
+            start = cum_sum[np.ceil(i_place[:-1]).astype(int)]
+            finish = cum_sum[np.floor(i_place[1:]).astype(int)]
+
+            y2 = np.where(whole_bins, finish - start, 0.)
+
+            bin_loc = np.clip(np.floor(i_place).astype(int), 0, len(y1) - 1)
+
+            # fractional contribution for bins where the new bin edges are in the same
+            # original bin.
+            same_cell = np.floor(i_place[1:]) == np.floor(i_place[:-1])
+            frac = i_place[1:] - i_place[:-1]
+            contrib = (frac * y1[bin_loc[:-1]])
+            y2 += np.where(same_cell, contrib, 0.)
+
+            # fractional contribution for bins where the left and right bin edges are in
+            # different original bins.
+            different_cell = np.floor(i_place[1:]) > np.floor(i_place[:-1])
+            frac_left = np.ceil(i_place[:-1]) - i_place[:-1]
+            contrib = (frac_left * y1[bin_loc[:-1]])
+
+            frac_right = i_place[1:] - np.floor(i_place[1:])
+            contrib += (frac_right * y1[bin_loc[1:]])
+
+            y2 += np.where(different_cell, contrib, 0.)
+            self.rebin_bin_data = (y2 * self.cal[0]).tolist()
         return self
 
     def calcCountRate(self):

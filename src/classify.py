@@ -7,6 +7,7 @@ from utility.data import loadSpectrumData
 from config import settings
 from simple_chalk import chalk
 from const import const
+from cProfile import Profile
 
 # TODO: Отрефакторить отчеты, ускорить ребиннинг, избавиться от лишних зависимостей,
 #   автосоздание папок, рабочий CLI, подобрать хорошие параметры, внедрить распознавание активности
@@ -89,9 +90,7 @@ def classify(**user_parsed_args):
                                    show_progress=True,
                                    show_results=user_parsed_args["Print"],
                                    **user_parsed_args)
-        getClfMetrics(clf_results,
-                      show_results=user_parsed_args["Print"],
-                      **user_parsed_args)
+        getClfMetrics(clf_results, **user_parsed_args)
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
         exit()

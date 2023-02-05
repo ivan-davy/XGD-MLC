@@ -53,10 +53,9 @@ def getBinaryConfusionMatrix(srcs, bkgs, bkg_sp_reference, method, tolerance, lo
     return [[tp, fp], [fn, tn]], accuracy
 
 
-def getClfMetrics(results, show_results=True, **user_args):
-    print(chalk.blue('\nCalculating statistics... ('),
-                     chalk.cyan(f'clf_threshold={settings.clf_threshold}'),
-                     chalk.blue(')'))
+def getClfMetrics(results, **user_args):
+    print(chalk.blue('\nCalculating statistics...'),
+          f'(clf_threshold = {chalk.cyan(settings.clf_threshold)})')
 
     matches = 0
     for key, val in results.items():
@@ -80,7 +79,7 @@ def getClfMetrics(results, show_results=True, **user_args):
                 if val[isotope] > settings.clf_threshold:
                     correctly_guessed += 1
         if expected_isotopes != 0:
-            precision = correctly_guessed/expected_isotopes
+            precision = correctly_guessed / expected_isotopes
         total_sum += precision
 
     total_sum = 0
@@ -100,15 +99,18 @@ def getClfMetrics(results, show_results=True, **user_args):
             if val[unique_isotope] > settings.clf_threshold:
                 correctly_guessed += 1
                 per_isotope_correctly_guessed[unique_isotope] += 1
-        accuracy = correctly_guessed/len(unique_isotopes)
+        accuracy = correctly_guessed / len(unique_isotopes)
         total_sum += accuracy
 
-    if show_results:
-        print(chalk.cyan(f'EMR:'), matches/len(results.keys()))
-        print(chalk.cyan(f'Precision:'), total_sum/len(results.keys()))
-        print(chalk.cyan(f'Accuracy:'), total_sum/len(results.keys()))
 
-        print(chalk.cyan('\nPer-isotope accuracies:'))
-        for key in per_isotope_total:
+    print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
+    print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))
+    print(chalk.cyan(f'Accuracy:'), total_sum / len(results.keys()))
+
+    print(chalk.cyan('\nPer-isotope accuracies:'))
+    for key in per_isotope_total:
+        try:
             per_isotope_accuracies[key] = per_isotope_correctly_guessed[key] / per_isotope_total[key]
             print(f'{key}: {per_isotope_accuracies[key]}')
+        except ZeroDivisionError:
+            continue
