@@ -27,6 +27,16 @@ class Spectrum:
         return str(self.__class__) + '\n' + '\n'.join(
             ('{} = {}'.format(item, self.__dict__[item]) for item in self.__dict__))
 
+    def calibrate_naive(self):
+        if not self.corrupted:
+            x = [i * self.cal[0] + self.cal[1] for i in range(self.channel_qty)]
+            y = [self.bin_data[i] / self.cal[0] for i in range(len(self.bin_data))]
+            if not settings.keep_redundant_data:
+                x = x[:int(settings.kev_cap * self.cal[0])]
+                y = y[:len(x)]
+            self.calib_bins = x
+            self.calib_bin_data = y
+
     def calibrate(self):
         if not self.corrupted:
             x = (np.arange(self.channel_qty) * self.cal[0] + self.cal[1]).tolist()
@@ -37,16 +47,6 @@ class Spectrum:
             self.calib_bins = x
             self.calib_bin_data = y
         return self
-
-    def calibrate_naive(self):
-        if not self.corrupted:
-            x = [i * self.cal[0] + self.cal[1] for i in range(self.channel_qty)]
-            y = [self.bin_data[i] / self.cal[0] for i in range(len(self.bin_data))]
-            if not settings.keep_redundant_data:
-                x = x[:int(settings.kev_cap * self.cal[0])]
-                y = y[:len(x)]
-            self.calib_bins = x
-            self.calib_bin_data = y
 
     def rebin_naive(self):
         self.calibrate()
@@ -117,14 +117,14 @@ class Spectrum:
 
             bin_loc = np.clip(np.floor(i_place).astype(int), 0, len(y1) - 1)
 
-            # fractional contribution for bins where the new bin edges are in the same
+            # fractional contribution for bins whose new bin edges are in the same
             # original bin.
             same_cell = np.floor(i_place[1:]) == np.floor(i_place[:-1])
             frac = i_place[1:] - i_place[:-1]
             contrib = (frac * y1[bin_loc[:-1]])
             y2 += np.where(same_cell, contrib, 0.)
 
-            # fractional contribution for bins where the left and right bin edges are in
+            # fractional contribution for bins whose left and right bin edges are in
             # different original bins.
             different_cell = np.floor(i_place[1:]) > np.floor(i_place[:-1])
             frac_left = np.ceil(i_place[:-1]) - i_place[:-1]

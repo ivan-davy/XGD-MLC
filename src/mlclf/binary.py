@@ -1,4 +1,7 @@
 import os
+
+from matplotlib import pyplot as plt
+
 from classes.spclass import *
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix, accuracy_score

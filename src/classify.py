@@ -45,7 +45,6 @@ def classify(**user_parsed_args):
     if bkg_spectrum.corrupted is False:
         bkg_spectrum.rebin().calcCountRate()
 
-
     #  Binary spectra classification
     print(chalk.blue('\n\nProceeding to binary spectra classification...'))
     print(f'Binary classification method selected: {chalk.cyan(user_parsed_args["MethodBinary"])}')
