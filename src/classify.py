@@ -9,7 +9,7 @@ from simple_chalk import chalk
 from const import const
 
 
-# TODO: Отрефакторить отчеты, рабочий CLI, подобрать хорошие параметры, внедрить распознавание активности
+# TODO: Отрефакторить отчеты, подобрать хорошие параметры, внедрить распознавание активности
 
 
 def classify(**user_parsed_args):
@@ -49,17 +49,23 @@ def classify(**user_parsed_args):
     print(f'Binary classification method selected: {chalk.cyan(user_parsed_args["MethodBinary"])}')
     print(f'Binary classification feature selected: {chalk.cyan(user_parsed_args["FeatureBinary"])}')
     Path.mkdir(Path(str(user_parsed_args['OutputBinary'])).parent, exist_ok=True, parents=True)
-    #  os.makedirs(str(user_parsed_args['OutputBinary']), exist_ok=True)
     bin_out = open(Path(str(user_parsed_args['OutputBinary'])), 'a+')
-    bin_results, res = {}, None
+    bin_results = {}
     if user_parsed_args["MethodBinary"] in const.supported_binary_clf_methods \
             and user_parsed_args["FeatureBinary"] in const.supported_binary_clf_features:
+
+        # Non-ML "sigma" method
         if user_parsed_args['MethodBinary'] == 'sigma':
+            print(chalk.blue('\nPerforming binary classification...'))
             for test_spectrum in test_spectrum_set:
-                res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
-                bin_results[test_spectrum.path] = res
-                bin_out.write(f'{test_spectrum.path:<60} {bkg_spectrum.path:<40} '
-                              f'{user_parsed_args["MethodBinary"]:<10} {res:<10}\n')
+                bin_results[test_spectrum.path] = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
+                bin_out.write(f'{test_spectrum.path:<100} {str(bkg_spectrum.path):<60} '
+                              f'{user_parsed_args["MethodBinary"]:<15} {bin_results[test_spectrum.path]:<10}\n')
+                counter += 1
+                print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
+            print(chalk.green(f'Binary classification results exported to {user_parsed_args["OutputBinary"]}'))
+
+        # ML methods
         elif 'ml' in user_parsed_args['MethodBinary']:
             bin_results = mlBinaryClassifier(test_spectrum_set,
                                              bin_out,
@@ -72,13 +78,15 @@ def classify(**user_parsed_args):
 
     #  Multi-label spectra classification
     if settings.bin_clf_only:
-        return res
+        exit()
     print(chalk.blue('\nProceeding to multi-label classification...'))
     if user_parsed_args["Method"] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
             in const.supported_multilabel_clf_features:
+
         print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
         print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}\n')
 
+        # Only-sources array from binary classification
         no_bkg_test_spectrum_set = []
         clf_out = open(str(user_parsed_args['Output']), 'a+')
         for sp in test_spectrum_set:
@@ -88,28 +96,30 @@ def classify(**user_parsed_args):
                                    clf_out,
                                    show=False,
                                    show_progress=True,
-                                   show_results=user_parsed_args["Print"],
+                                   show_results=bool_parse(user_parsed_args["Print"]),
                                    **user_parsed_args)
         getClfMetrics(clf_results, **user_parsed_args)
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
         exit()
-    return res
 
 
 if __name__ == '__main__':
-    print(chalk.yellow('Starting XGD-MLC...'))
+    print(chalk.magenta('Starting XGD-MLC...'))
     #  CLI input parser
-    parser = ArgumentParser(description='Xenon Gamma Detector - Machine Learning Classifier')
+    parser = ArgumentParser(
+        description='Xenon Gamma Detector Machine Learning Classifier -- a Python3 ML classifier of radioactive gamma-sources, designed to work with '
+                    'the spectra acquired by Xenon Gamma-Detector of NRNU MEPhI.',
+        epilog=chalk.magenta('Ivan Davydov @ NRNU MEPhI, 2023'))
     parser.add_argument('-T', '--TestSet',
                         help='test spectra set location',
                         default=settings.test_fileset_dir,
                         type=str)
-    parser.add_argument('-S', '--SrcsSet',
+    parser.add_argument('-S', '--SrcSet',
                         help='sources spectra set location',
                         default=settings.src_fileset_dir,
                         type=str)
-    parser.add_argument('-B', '--BkgsSet',
+    parser.add_argument('-B', '--BkgSet',
                         help='background spectra set location',
                         default=settings.bkg_fileset_dir,
                         type=str)
@@ -117,13 +127,25 @@ if __name__ == '__main__':
                         help='background reference spectrum path (required for non-ml methods)',
                         default=settings.bkg_file_path,
                         type=str)
-    parser.add_argument('-mb', '--MethodBinary',
+    parser.add_argument('-m', '--MethodBinary',
                         help='binary classification method',
+                        choices=const.supported_binary_clf_methods,
                         default=settings.bin_clf_method,
                         type=str)
-    parser.add_argument('-m', '--Method',
+    parser.add_argument('-M', '--Method',
                         help='multilabel classification method',
+                        choices=const.supported_multilabel_clf_methods,
                         default=settings.clf_method,
+                        type=str)
+    parser.add_argument('-f', '--FeatureBinary',
+                        help='binary ML feature type',
+                        choices=const.supported_binary_clf_features,
+                        default=settings.bin_clf_feature_type,
+                        type=str)
+    parser.add_argument('-F', '--Feature',
+                        help='multilabel ML feature type (currently one supported)',
+                        choices=const.supported_multilabel_clf_features,
+                        default=settings.clf_feature_type,
                         type=str)
     parser.add_argument('-o', '--OutputBinary',
                         help='binary classification report file path',
@@ -133,17 +155,9 @@ if __name__ == '__main__':
                         help='multilabel classification report file path',
                         default=settings.clf_report_path,
                         type=str)
-    parser.add_argument('-sc', '--Scale',
-                        help='perform ML data pre-processing? (boolean)',
+    parser.add_argument('-q', '--Scale',
+                        help='perform ML data pre-processing?',
                         default=settings.ml_perform_data_scaling,
-                        type=bool)
-    parser.add_argument('-f', '--FeatureBinary',
-                        help='binary ML feature type',
-                        default=settings.bin_clf_feature_type,
-                        type=str)
-    parser.add_argument('-F', '--Feature',
-                        help='multilabel ML feature type (currently one supported)',
-                        default=settings.clf_feature_type,
                         type=str)
     parser.add_argument('-p', '--Print',
                         help='show results',

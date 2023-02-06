@@ -183,8 +183,8 @@ class Spectrum:
         else:
             return 'Background'
 
-    def pearsonBinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,  # Ineffective method, not implemented
-                              tolerance=1, los=0.05):
+    def pearsonBinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,
+                              tolerance=1, los=0.05):  # Ineffective method, not implemented
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):
@@ -209,8 +209,8 @@ class Spectrum:
         else:
             return 'Background'
 
-    def chi2BinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,  # Ineffective method, not implemented
-                           tolerance=3, los=0.05):
+    def chi2BinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,
+                           tolerance=3, los=0.05):  # Ineffective method, not implemented
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):

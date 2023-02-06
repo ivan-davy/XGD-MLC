@@ -10,13 +10,14 @@ from config import settings
 import numpy as np
 from utility.data import loadSpectrumData
 from utility.visual import mlShowLinfit, mlShowAverage
+from utility.common import bool_parse
 from simple_chalk import chalk
 
 
-def mlLoadBinarySets():
+def mlLoadBinarySets(user_args):
     from os import walk, path
     source_sp_set, background_sp_set = [], []
-    for root, dirs, files in walk(settings.src_fileset_dir):
+    for root, dirs, files in walk(user_args["SrcSet"]):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
@@ -27,7 +28,7 @@ def mlLoadBinarySets():
                         continue
                 sp.has_source = True
                 source_sp_set.append(sp)
-    for root, dirs, files in walk(settings.bkg_fileset_dir):
+    for root, dirs, files in walk(user_args["BkgSet"]):
         for file in files:
             if file.endswith('.sps'):
                 sp = loadSpectrumData(path.join(root, file))
@@ -98,7 +99,7 @@ def mlGetBinaryFeatures(ml_set, feature_type, bins_per_sect=settings.ml_bin_clf_
 
 def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
                         bins_per_sect=settings.ml_bin_clf_bins_per_section,
-                        scale=True, show=False):
+                        scale=settings.ml_perform_data_scaling, show=False):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'linfit':
         feature_names = [f'A{segment}' for segment in range(num_of_sections)] + \
@@ -117,7 +118,7 @@ def mlCreateBinaryModel(source_ml_set, background_ml_set, feature_type, method,
             model_data = pickle.load(f)
         print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(chalk.red(f'Dataframe file not found.'), 'Creating a new one...\n')
+        print(chalk.yellow(f'Dataframe file not found.'), 'Creating a new one...\n')
         if feature_type == 'linfit':
             background_ml_set_a, background_ml_set_b = mlGetBinaryFeatures(background_ml_set,
                                                                            feature_type,
@@ -206,7 +207,7 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
     import pickle
     ml_bin_model = None
     mdl_location = f'{settings.bin_clf_model_dir}{os.sep}{settings.ml_bin_clf_bins_per_section}bps_{settings.kev_cap}kev' \
-                   f'{"_scaled_" if user_args["Scale"] else "_"}' \
+                   f'{"_scaled_" if bool_parse(user_args["Scale"]) else "_"}' \
                    f'{user_args["MethodBinary"]}_{user_args["FeatureBinary"]}_bin.mdl'
     try:
         print(chalk.blue(f'\nLooking for {mdl_location}... '), end='')
@@ -214,12 +215,12 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
             ml_bin_model = pickle.load(f)
         print(chalk.green('File found.'))
     except FileNotFoundError:
-        print(chalk.red(f'\nModel file not found. '), 'Creating a new one...')
-        sp_ml_set, bkg_ml_set = mlLoadBinarySets()
+        print(chalk.yellow(f'\nModel file not found. '), 'Creating a new one...')
+        sp_ml_set, bkg_ml_set = mlLoadBinarySets(user_args)
         ml_bin_model = mlCreateBinaryModel(sp_ml_set, bkg_ml_set,
                                            user_args["FeatureBinary"],
                                            user_args["MethodBinary"],
-                                           scale=user_args["Scale"],
+                                           scale=bool_parse(user_args["Scale"]),
                                            show=show)
         os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
         with open(mdl_location, 'wb') as f:
@@ -239,5 +240,5 @@ def mlBinaryClassifier(test_spectrum_set, out, show, show_progress, **user_args)
             os.makedirs(os.path.dirname(user_args['OutputBinary']), exist_ok=True)
             out.write(f'{test_spectrum.path:<100} {mdl_location:<60} '
                       f'{user_args["MethodBinary"]:<15} {res:<10}\n')
-        print(chalk.green(f'\nBinary classification results exported to {settings.bin_clf_report_path}'))
+        print(chalk.green(f'\nBinary classification results exported to {user_args["OutputBinary"]}'))
         return results

@@ -6,20 +6,21 @@ import numpy as np
 from config import isodata, settings
 from utility.visual import mlShowAverage, plotClassificationResults
 from utility.data import loadSpectrumData
+from utility.common import bool_parse
 import os
 from simple_chalk import chalk
 
 
-def mlLoadSets():
+def mlLoadSets(user_args):
     from os import walk, path, scandir
     sp_set = {}
-    subdirs = [f.path for f in scandir(f'{settings.src_fileset_dir}') if f.is_dir()]
+    subdirs = [f.path for f in scandir(f'{user_args["SrcSet"]}') if f.is_dir()]
     for subdir in subdirs:
         for root, dirs, files in walk(subdir):
             for file in files:
                 if file.endswith('.sps'):
                     dir_name = subdir.rsplit(os.sep, 1)[-1]
-                    if str(settings.test_fileset_dir) not in dir_name:
+                    if str(user_args["TestSet"]) not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
                             print(chalk.redBright(f'CORRUPTED: {sp.path}'))
@@ -71,7 +72,7 @@ def mlCreateModel(sp_set,
             y = data['labels']
         print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(chalk.red(f'Dataframe file not found. '), 'Creating a new one...\n')
+        print(chalk.yellow(f'Dataframe file not found. '), 'Creating a new one...\n')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -148,7 +149,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
     ml_clf_model = None
     mdl_location = f'{settings.clf_model_dir}{os.sep}' \
                    f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
-                   f'{"_scaled_" if user_args["Scale"] else "_"}' \
+                   f'{"_scaled_" if bool_parse(user_args["Scale"]) else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
     try:
         print(chalk.blue(f'Looking for {mdl_location}... '), end='')
@@ -156,12 +157,12 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
             ml_clf_model = pickle.load(f)
         print(chalk.green('File found.'))
     except FileNotFoundError:
-        print(chalk.red(f'\nModel file not found. '), 'Creating a new one...')
-        sp_set = mlLoadSets()
+        print(chalk.yellow(f'\nModel file not found. '), 'Creating a new one...')
+        sp_set = mlLoadSets(user_args)
         ml_clf_model = mlCreateModel(sp_set,
                                      user_args["Feature"],
                                      user_args["Method"],
-                                     scale=user_args["Scale"],
+                                     scale=bool_parse(user_args["Scale"]),
                                      show=show,
                                      show_progress=show_progress)
         os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
@@ -201,5 +202,5 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                       f'{test_spectrum_result_sorted}\n')
             if show_results:
                 plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
-        print(chalk.green(f'\nClassification results exported to {settings.clf_report_path}'))
+        print(chalk.green(f'\nClassification results exported to {user_args["Output"]}'))
         return results
