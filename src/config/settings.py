@@ -1,17 +1,17 @@
 from pathlib import Path
 
-test_file_location = Path('../sps/test/Сs137_15cm.sps')
-bkg_file_location = Path('../sps/bkgs/60s/202275_13176_bkg_60s.sps')
+test_file_path = Path('../sps/test/Сs137_15cm.sps')
+bkg_file_path = Path('../sps/bkgs/60s/202275_13176_bkg_60s.sps')
 
-test_fileset_location = Path('../sps/test')
-bkg_fileset_location = Path('../sps/bkgs')
-src_fileset_location = Path('../sps/srcs')
+test_fileset_dir = Path('../sps/test')
+bkg_fileset_dir = Path('../sps/bkgs')
+src_fileset_dir = Path('../sps/srcs')
 
 ###
 
-bin_clf_model_directory = Path('../models/bin/')
-bin_clf_dataframe_directory = Path('../dataframes/bin/')
-bin_clf_report_location = Path('../reports/bin_clf_report.txt')
+bin_clf_model_dir = Path('../models/bin/')
+bin_clf_dataframe_dir = Path('../dataframes/bin/')
+bin_clf_report_path = Path('../reports/bin_clf_report.txt')
 
 bin_clf_sections_qty = 10
 ml_bin_clf_bins_per_section = 25
@@ -21,9 +21,9 @@ bin_clf_method = 'mlrf'  # see const.const.supported_binary_clf_methods
 
 ###
 
-clf_model_directory = Path('../models/multi/')
-clf_dataframe_directory = Path('../dataframes/multi/')
-clf_report_location = Path('../reports/clf_report.txt')
+clf_model_dir = Path('../models/multi/')
+clf_dataframe_dir = Path('../dataframes/multi/')
+clf_report_path = Path('../reports/clf_report.txt')
 
 ml_clf_bins_per_section = 5
 

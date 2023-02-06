@@ -12,3 +12,5 @@ def flatten(lst):
     return [x for xs in lst for x in xs]
 
 
+def linear(x, a, b):
+    return a * x + b

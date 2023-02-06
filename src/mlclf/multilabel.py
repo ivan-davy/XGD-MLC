@@ -13,13 +13,13 @@ from simple_chalk import chalk
 def mlLoadSets():
     from os import walk, path, scandir
     sp_set = {}
-    subdirs = [f.path for f in scandir(f'{settings.src_fileset_location}') if f.is_dir()]
+    subdirs = [f.path for f in scandir(f'{settings.src_fileset_dir}') if f.is_dir()]
     for subdir in subdirs:
         for root, dirs, files in walk(subdir):
             for file in files:
                 if file.endswith('.sps'):
                     dir_name = subdir.rsplit(os.sep, 1)[-1]
-                    if str(settings.test_fileset_location) not in dir_name:
+                    if str(settings.test_fileset_dir) not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
                             print(chalk.redBright(f'CORRUPTED: {sp.path}'))
@@ -60,7 +60,7 @@ def mlCreateModel(sp_set,
     if feature_type == 'average':
         feature_names = [f'C{segment}' for segment in range(num_of_sections)]
 
-    dframe_location = f'{settings.clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
+    dframe_location = f'{settings.clf_dataframe_dir}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}_multi.dfr'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
@@ -86,6 +86,7 @@ def mlCreateModel(sp_set,
                     counter += 1
                     print('\r', chalk.cyan(counter), '/', len(sp_set), key, end='')
             dataframe = pd.DataFrame.from_dict(data_features_set, orient='index', columns=feature_names)
+        os.makedirs(os.path.dirname(dframe_location), exist_ok=True)
         with open(dframe_location, 'wb+') as f:
             pickle.dump({
                 'dataframe': dataframe,
@@ -145,7 +146,7 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
 def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
     import pickle
     ml_clf_model = None
-    mdl_location = f'{settings.clf_model_directory}{os.sep}' \
+    mdl_location = f'{settings.clf_model_dir}{os.sep}' \
                    f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
                    f'{"_scaled_" if user_args["Scale"] else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
@@ -163,6 +164,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                                      scale=user_args["Scale"],
                                      show=show,
                                      show_progress=show_progress)
+        os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
         with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
         print(chalk.green('Done!'))
@@ -192,11 +194,12 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
             for w in sorted_result_keys:
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
+            os.makedirs(os.path.dirname(user_args['Output']), exist_ok=True)
             out.write(f'{test_spectrum.path:<100} '
                       f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
                       f'{test_spectrum_result_sorted}\n')
             if show_results:
                 plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
-        print(chalk.green(f'\nClassification results exported to {settings.clf_report_location}'))
+        print(chalk.green(f'\nClassification results exported to {settings.clf_report_path}'))
         return results

@@ -7,10 +7,9 @@ from utility.data import loadSpectrumData
 from config import settings
 from simple_chalk import chalk
 from const import const
-from cProfile import Profile
 
-# TODO: Отрефакторить отчеты, ускорить ребиннинг, избавиться от лишних зависимостей,
-#   автосоздание папок, рабочий CLI, подобрать хорошие параметры, внедрить распознавание активности
+
+# TODO: Отрефакторить отчеты, рабочий CLI, подобрать хорошие параметры, внедрить распознавание активности
 
 
 def classify(**user_parsed_args):
@@ -49,10 +48,12 @@ def classify(**user_parsed_args):
     print(chalk.blue('\n\nProceeding to binary spectra classification...'))
     print(f'Binary classification method selected: {chalk.cyan(user_parsed_args["MethodBinary"])}')
     print(f'Binary classification feature selected: {chalk.cyan(user_parsed_args["FeatureBinary"])}')
-    bin_out = open(str(user_parsed_args['OutputBinary']), 'a+')
+    Path.mkdir(Path(str(user_parsed_args['OutputBinary'])).parent, exist_ok=True, parents=True)
+    #  os.makedirs(str(user_parsed_args['OutputBinary']), exist_ok=True)
+    bin_out = open(Path(str(user_parsed_args['OutputBinary'])), 'a+')
     bin_results, res = {}, None
-    if user_parsed_args["MethodBinary"] in const.supported_binary_clf_methods and user_parsed_args["FeatureBinary"] \
-            in const.supported_binary_clf_features:
+    if user_parsed_args["MethodBinary"] in const.supported_binary_clf_methods \
+            and user_parsed_args["FeatureBinary"] in const.supported_binary_clf_features:
         if user_parsed_args['MethodBinary'] == 'sigma':
             for test_spectrum in test_spectrum_set:
                 res = test_spectrum.sigmaBinaryClassify(bkg_spectrum)
@@ -97,52 +98,52 @@ def classify(**user_parsed_args):
 
 
 if __name__ == '__main__':
-    print(chalk.yellow('Starting GS-MLC...'))
+    print(chalk.yellow('Starting XGD-MLC...'))
     #  CLI input parser
-    parser = ArgumentParser(description='Gamma-Spectra Machine Learning Classifier')
+    parser = ArgumentParser(description='Xenon Gamma Detector - Machine Learning Classifier')
     parser.add_argument('-T', '--TestSet',
-                        help='location of spectra set to be tested',
-                        default=settings.test_fileset_location,
+                        help='test spectra set location',
+                        default=settings.test_fileset_dir,
                         type=str)
-    parser.add_argument('-S', '--SigSet',
-                        help='location of source spectra set',
-                        default=settings.src_fileset_location,
+    parser.add_argument('-S', '--SrcsSet',
+                        help='sources spectra set location',
+                        default=settings.src_fileset_dir,
                         type=str)
-    parser.add_argument('-B', '--BkgSet',
-                        help='location of background spectra set',
-                        default=settings.bkg_fileset_location,
+    parser.add_argument('-B', '--BkgsSet',
+                        help='background spectra set location',
+                        default=settings.bkg_fileset_dir,
                         type=str)
     parser.add_argument('-b', '--Bkg',
-                        help='location of background reference spectrum (needed for binary sigma method)',
-                        default=settings.bkg_file_location,
+                        help='background reference spectrum path (required for non-ml methods)',
+                        default=settings.bkg_file_path,
                         type=str)
     parser.add_argument('-mb', '--MethodBinary',
-                        help='binary classification method (filters out spectra with no source)',
+                        help='binary classification method',
                         default=settings.bin_clf_method,
                         type=str)
     parser.add_argument('-m', '--Method',
-                        help='classification method (determines the type of sources present in a spectrum)',
+                        help='multilabel classification method',
                         default=settings.clf_method,
                         type=str)
     parser.add_argument('-o', '--OutputBinary',
-                        help='filename/location of the output report file',
-                        default=settings.bin_clf_report_location,
+                        help='binary classification report file path',
+                        default=settings.bin_clf_report_path,
                         type=str)
     parser.add_argument('-O', '--Output',
-                        help='filename/location of the output report file',
-                        default=settings.clf_report_location,
+                        help='multilabel classification report file path',
+                        default=settings.clf_report_path,
                         type=str)
     parser.add_argument('-sc', '--Scale',
-                        help='perform ML data pre-processing (boolean)',
+                        help='perform ML data pre-processing? (boolean)',
                         default=settings.ml_perform_data_scaling,
                         type=bool)
-    parser.add_argument('-F', '--Feature',
-                        help='ML feature type',
-                        default=settings.clf_feature_type,
-                        type=str)
     parser.add_argument('-f', '--FeatureBinary',
                         help='binary ML feature type',
                         default=settings.bin_clf_feature_type,
+                        type=str)
+    parser.add_argument('-F', '--Feature',
+                        help='multilabel ML feature type (currently one supported)',
+                        default=settings.clf_feature_type,
                         type=str)
     parser.add_argument('-p', '--Print',
                         help='show results',

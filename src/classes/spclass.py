@@ -1,5 +1,4 @@
 from scipy.stats import stats
-
 from mlclf.binary import *
 from config import settings
 import numpy as np

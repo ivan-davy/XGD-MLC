@@ -4,6 +4,7 @@ import scipy.special
 from matplotlib import pyplot as plt
 from scipy import optimize
 from config import settings, isodata
+from utility.common import linear
 
 
 def plotAllBinData(spectrum):
@@ -31,10 +32,6 @@ GAUSS_CUSTOM_PARAMETERS = ('A', 'B', 'Amp', 'Mu', 'Sigma')
 
 def gaussCustom(x, a, b, amp, mu, sig):
     return a * x + b + amp / (math.sqrt(2 * math.pi) * sig) * math.exp(-0.5 * ((x - mu) / sig) ** 2)
-
-
-def linear(x, a, b):
-    return a * x + b
 
 
 def fitGaussCustom(x_data, y_data, x_range, guess, to_plot):
