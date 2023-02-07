@@ -1,3 +1,4 @@
+import sys
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import pickle
@@ -33,8 +34,7 @@ def mlLoadSets(user_args):
     return sp_set
 
 
-def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
-                  show=False):
+def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section, show=False):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'average':
         spectrum_c = []
@@ -163,7 +163,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, expo
                                      user_args["Feature"],
                                      user_args["Method"],
                                      scale=bool_parse(user_args["Scale"]),
-                                     show=show,
+                                     show=False,
                                      show_progress=show_progress)
         os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
         with open(mdl_location, 'wb+') as f:
@@ -172,6 +172,13 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, expo
     finally:
         print(chalk.blue('\nPerforming multilabel classification...'))
         results, counter = {}, 0
+        app, vis = None, None
+        if show:
+            from PyQt5.QtWidgets import QApplication
+            from classes.visualizer import Visualizer
+            app = QApplication(sys.argv)
+            vis = Visualizer()
+
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
@@ -182,6 +189,7 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, expo
                                          user_args["Feature"],
                                          scale=user_args["Scale"])
             i = 0
+
             for key, value in isodata.clf_isotopes.items():
                 custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
                 if custom_proba > 1:
@@ -196,13 +204,24 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, expo
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
             os.makedirs(os.path.dirname(user_args['Output']), exist_ok=True)
-            settings.clf_images_path.mkdir(exist_ok=True, parents=True)
+            settings.images_path.mkdir(exist_ok=True, parents=True)
 
             out.write(f'{test_spectrum.path:<100} '
                       f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
                       f'{test_spectrum_result_sorted}\n')
             if show_results or export_images:
-                plotClassificationResults(test_spectrum, test_spectrum_result_sorted, show_results, export_images)
+                plotClassificationResults(test_spectrum,
+                                          test_spectrum_result_sorted,
+                                          show_results,
+                                          show=show,
+                                          export=export_images,
+                                          vis=vis)
         print(chalk.green(f'\nClassification results exported to {user_args["Output"]}'))
+        if export_images:
+            print(chalk.green(f'Images exported to {settings.images_path}'))
+
+        if show:
+            app.quit()
+
         return results

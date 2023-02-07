@@ -94,7 +94,7 @@ def classify(**user_parsed_args):
                 no_bkg_test_spectrum_set.append(sp)
         clf_results = mlClassifier(no_bkg_test_spectrum_set,
                                    clf_out,
-                                   show=False,
+                                   show=bool_parse(user_parsed_args['Vis']),
                                    show_progress=True,
                                    show_results=bool_parse(user_parsed_args['Print']),
                                    export_images=bool_parse(user_parsed_args['Images']),
@@ -113,6 +113,7 @@ if __name__ == '__main__':
                     'ML classifier of radioactive gamma-sources, designed to work with '
                     'the spectra acquired by Xenon Gamma-Detector of NRNU MEPhI.',
         epilog=chalk.magenta('Ivan Davydov @ NRNU MEPhI, 2023'))
+
     parser.add_argument('-T', '--TestSet',
                         help='test spectra set location',
                         default=settings.test_fileset_dir,
@@ -157,21 +158,27 @@ if __name__ == '__main__':
                         help='multilabel classification report file path',
                         default=settings.clf_report_path,
                         type=str)
+
     parser.add_argument('-q', '--Scale',
                         help='perform ML data pre-processing?',
                         default=settings.ml_perform_data_scaling,
                         type=str)
     parser.add_argument('-p', '--Print',
-                        help='show results',
+                        help='show results?',
                         default=settings.show_results,
                         type=str)
     parser.add_argument('-i', '--Images',
-                        help='export images to program directory',
-                        default=settings.export_images,
+                        help='export images to default image directory?',
+                        default=settings.export_clf_result_images,
+                        type=str)
+    parser.add_argument('-V', '--Vis',
+                        help='visualize multilabel classification progress',
+                        default=settings.visualize_progress,
                         type=str)
     parser.add_argument('-n', '--NoMulti',
                         help='perform binary classification only',
                         default=settings.bin_clf_only,
                         type=str)
+
     args = vars(parser.parse_args())
     classify(**args)

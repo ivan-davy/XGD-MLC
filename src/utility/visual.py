@@ -1,10 +1,10 @@
 import math
-import os.path
-
 import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
 from pathlib import Path
+
+from matplotlib.ticker import FormatStrFormatter
 from scipy import optimize
 from config import settings, isodata
 from utility.common import linear
@@ -187,6 +187,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)
     fig, ax1 = plt.subplots(constrained_layout=True)
+    fig.set_size_inches(12, 6, forward=True)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     for section in range(num_of_sections - 1):
         x = np.linspace(section * bins_per_sect, (section + 1) * bins_per_sect)
@@ -204,15 +205,16 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     plt.show()
 
 
-def plotClassificationResults(spectrum, results, show, export):
+def plotClassificationResults(spectrum, results, show_results, export=True, show=True, vis=None):
     fig, ax1 = plt.subplots(1)
-    fig.set_size_inches(10, 6)
+    fig.set_size_inches(12, 6, forward=True)
     plt.grid(True)
     plt.rcParams['font.family'] = 'monospace'
     fig.suptitle(spectrum.path, weight='bold')
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
+    ax1.yaxis.set_major_formatter(FormatStrFormatter('%.f'))
     plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
@@ -231,11 +233,15 @@ def plotClassificationResults(spectrum, results, show, export):
 
     iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
                        f'{round(value * 100, 5)}%' for key, value in results.items()]
-    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.95, 0.6))
+    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.92, 0.6))
 
-    if show:
+    if show_results:
         plt.ioff()
         plt.show()
     if export:
-        plt.savefig(f'{settings.clf_images_path.joinpath(Path(spectrum.path).resolve().stem)}.png', bbox_inches='tight')
+        img_path = f'{settings.images_path.joinpath(Path(spectrum.path).resolve().stem)}.png'
+        plt.savefig(img_path, bbox_inches='tight')
         plt.close()
+        if show and vis is not None:
+            vis.show_image(img_path)
+
