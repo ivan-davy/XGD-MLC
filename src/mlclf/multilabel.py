@@ -144,7 +144,7 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
     return res_proba
 
 
-def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
+def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, export_images, **user_args):
     import pickle
     ml_clf_model = None
     mdl_location = f'{settings.clf_model_dir}{os.sep}' \
@@ -196,11 +196,13 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
                 test_spectrum_result_sorted[w] = test_spectrum_result[w]
 
             os.makedirs(os.path.dirname(user_args['Output']), exist_ok=True)
+            settings.clf_images_path.mkdir(exist_ok=True, parents=True)
+
             out.write(f'{test_spectrum.path:<100} '
                       f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
                       f'{test_spectrum_result_sorted}\n')
-            if show_results:
-                plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
+            if show_results or export_images:
+                plotClassificationResults(test_spectrum, test_spectrum_result_sorted, show_results, export_images)
         print(chalk.green(f'\nClassification results exported to {user_args["Output"]}'))
         return results

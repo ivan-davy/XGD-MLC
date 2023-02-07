@@ -77,16 +77,16 @@ def classify(**user_parsed_args):
         exit()
 
     #  Multi-label spectra classification
-    if settings.bin_clf_only:
+    if bool_parse(user_parsed_args['NoMulti']):
         exit()
     print(chalk.blue('\nProceeding to multi-label classification...'))
-    if user_parsed_args["Method"] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
+    if user_parsed_args['Method'] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
             in const.supported_multilabel_clf_features:
 
         print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
         print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}\n')
 
-        # Only-sources array from binary classification
+        # Only-sources spectra array from binary classification
         no_bkg_test_spectrum_set = []
         clf_out = open(str(user_parsed_args['Output']), 'a+')
         for sp in test_spectrum_set:
@@ -96,7 +96,8 @@ def classify(**user_parsed_args):
                                    clf_out,
                                    show=False,
                                    show_progress=True,
-                                   show_results=bool_parse(user_parsed_args["Print"]),
+                                   show_results=bool_parse(user_parsed_args['Print']),
+                                   export_images=bool_parse(user_parsed_args['Images']),
                                    **user_parsed_args)
         getClfMetrics(clf_results, **user_parsed_args)
     else:
@@ -108,7 +109,8 @@ if __name__ == '__main__':
     print(chalk.magenta('Starting XGD-MLC...'))
     #  CLI input parser
     parser = ArgumentParser(
-        description='Xenon Gamma Detector Machine Learning Classifier -- a Python3 ML classifier of radioactive gamma-sources, designed to work with '
+        description='Xenon Gamma Detector Machine Learning Classifier -- a Python3 '
+                    'ML classifier of radioactive gamma-sources, designed to work with '
                     'the spectra acquired by Xenon Gamma-Detector of NRNU MEPhI.',
         epilog=chalk.magenta('Ivan Davydov @ NRNU MEPhI, 2023'))
     parser.add_argument('-T', '--TestSet',
@@ -162,6 +164,14 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--Print',
                         help='show results',
                         default=settings.show_results,
+                        type=str)
+    parser.add_argument('-i', '--Images',
+                        help='export images to program directory',
+                        default=settings.export_images,
+                        type=str)
+    parser.add_argument('-n', '--NoMulti',
+                        help='perform binary classification only',
+                        default=settings.bin_clf_only,
                         type=str)
     args = vars(parser.parse_args())
     classify(**args)

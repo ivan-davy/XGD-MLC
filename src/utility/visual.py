@@ -1,7 +1,10 @@
 import math
+import os.path
+
 import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
+from pathlib import Path
 from scipy import optimize
 from config import settings, isodata
 from utility.common import linear
@@ -201,7 +204,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     plt.show()
 
 
-def plotClassificationResults(spectrum, results):
+def plotClassificationResults(spectrum, results, show, export):
     fig, ax1 = plt.subplots(1)
     fig.set_size_inches(10, 6)
     plt.grid(True)
@@ -230,4 +233,9 @@ def plotClassificationResults(spectrum, results):
                        f'{round(value * 100, 5)}%' for key, value in results.items()]
     fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.95, 0.6))
 
-    plt.show()
+    if show:
+        plt.ioff()
+        plt.show()
+    if export:
+        plt.savefig(f'{settings.clf_images_path.joinpath(Path(spectrum.path).resolve().stem)}.png', bbox_inches='tight')
+        plt.close()

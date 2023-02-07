@@ -103,7 +103,6 @@ def getClfMetrics(results, **user_args):
         accuracy = correctly_guessed / len(unique_isotopes)
         total_sum += accuracy
 
-
     print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
     print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))
     print(chalk.cyan(f'Accuracy:'), total_sum / len(results.keys()))

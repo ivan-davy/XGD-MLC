@@ -24,6 +24,7 @@ bin_clf_method = 'mlrf'  # see const.const.supported_binary_clf_methods
 clf_model_dir = Path('../models/multi/')
 clf_dataframe_dir = Path('../dataframes/multi/')
 clf_report_path = Path('../reports/clf_report.txt')
+clf_images_path = Path('../images/')
 
 ml_clf_bins_per_section = 5
 
@@ -41,7 +42,8 @@ default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manu
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
 bin_clf_only = False
-show_results = True
+show_results = False
+export_images = True
 
 ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)
