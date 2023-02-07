@@ -1,6 +1,8 @@
 class Isotope:
-    def __init__(self, iso_id, name, mass_number, atomic_number, half_life_yrs, original_decay, original_date, acquisition_date,
-                 peaks, color):
+    def __init__(self, iso_id, name, mass_number, atomic_number,
+                 half_life_yrs, original_decay,
+                 original_date, acquisition_date,
+                 lines, color):
         self.iso_id = iso_id
         self.name = name
         self.A = mass_number
@@ -10,5 +12,5 @@ class Isotope:
         self.orig_date = original_date
         self.acq_date = acquisition_date
         self.acq_decay = original_decay * 2 ** (-(acquisition_date - original_date).days / (365.25 * self.half_life))
-        self.peaks = peaks
+        self.lines = lines
         self.color = color

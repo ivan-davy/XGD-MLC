@@ -19,7 +19,8 @@ class Spectrum:
         self.count_rate_bin_data = None
         self.features_array = None
         self.has_source = None
-        self.isotope = None
+        self.src_known_isotope = None
+        self.peak_data = None
         self.corrupted = False
 
     def __str__(self):
@@ -168,6 +169,11 @@ class Spectrum:
             return sum(self.bin_data)
         if dtype == 'count_rate':
             return sum(self.count_rate_bin_data)
+
+    def calcPeakData(self):
+        self.peak_data = []
+        for line in self.src_known_isotope.lines:
+            return 0
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
         self.rebin().calcCountRate()

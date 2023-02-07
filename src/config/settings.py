@@ -41,13 +41,15 @@ clf_threshold = 0.6
 
 kev_cap = 1500
 default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manually with enforce-cal set to True
+peak_delta_x = 15
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
 bin_clf_only = False
-visualize_progress = True
-show_results = False
+predict_activity = True
 
-export_clf_result_images = True
+visualize_progress = False
+show_results = True
+export_clf_result_images = False
 
 ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)

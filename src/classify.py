@@ -36,12 +36,12 @@ def classify(**user_parsed_args):
     if test_spectrum_set:
         print(chalk.blue('\nProcessing test spectra...'))
     for test_spectrum in test_spectrum_set:
-        if test_spectrum.corrupted is False:
+        if not test_spectrum.corrupted:
             test_spectrum.rebin().calcCountRate()
             counter += 1
             #  plotBinData(test_spectrum)
             print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
-    if bkg_spectrum.corrupted is False:
+    if not bkg_spectrum.corrupted:
         bkg_spectrum.rebin().calcCountRate()
 
     #  Binary spectra classification
@@ -85,21 +85,23 @@ def classify(**user_parsed_args):
 
         print(f'Multilabel classification method selected: {chalk.cyan(user_parsed_args["Method"])}')
         print(f'Multilabel classification feature selected: {chalk.cyan(user_parsed_args["Feature"])}\n')
+        clf_out = open(str(user_parsed_args['Output']), 'a+')
 
         # Only-sources spectra array from binary classification
-        no_bkg_test_spectrum_set = []
-        clf_out = open(str(user_parsed_args['Output']), 'a+')
-        for sp in test_spectrum_set:
-            if bin_results[sp.path] == 'Source':
-                no_bkg_test_spectrum_set.append(sp)
-        clf_results = mlClassifier(no_bkg_test_spectrum_set,
-                                   clf_out,
-                                   show=bool_parse(user_parsed_args['Vis']),
-                                   show_progress=True,
-                                   show_results=bool_parse(user_parsed_args['Print']),
-                                   export_images=bool_parse(user_parsed_args['Images']),
-                                   **user_parsed_args)
-        getClfMetrics(clf_results, **user_parsed_args)
+        no_bkg_test_spectrum_set = [sp for sp in test_spectrum_set if bin_results[sp.path] == 'Source']
+
+        clf_proba_results, clf_act_results = mlClassifier(no_bkg_test_spectrum_set,
+                                                          clf_out,
+                                                          bkg_spectrum,
+                                                          predict_act=bool_parse(user_parsed_args['Act']),
+                                                          show=bool_parse(user_parsed_args['Vis']),
+                                                          show_progress=True,
+                                                          show_results=bool_parse(user_parsed_args['Print']),
+                                                          export_images=bool_parse(user_parsed_args['Images']),
+                                                          **user_parsed_args)
+
+        getClfMetrics(clf_proba_results, **user_parsed_args)
+
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))
         exit()
@@ -178,6 +180,10 @@ if __name__ == '__main__':
     parser.add_argument('-n', '--NoMulti',
                         help='perform binary classification only',
                         default=settings.bin_clf_only,
+                        type=str)
+    parser.add_argument('-A', '--Act',
+                        help='predict source activities?',
+                        default=settings.predict_activity,
                         type=str)
 
     args = vars(parser.parse_args())

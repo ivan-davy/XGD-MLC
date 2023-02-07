@@ -205,7 +205,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     plt.show()
 
 
-def plotClassificationResults(spectrum, results, show_results, export=True, show=True, vis=None):
+def plotClassificationResults(spectrum, results, show_results=True, export=True, show=True, vis=None):
     fig, ax1 = plt.subplots(1)
     fig.set_size_inches(12, 6, forward=True)
     plt.grid(True)
@@ -214,7 +214,7 @@ def plotClassificationResults(spectrum, results, show_results, export=True, show
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
-    ax1.yaxis.set_major_formatter(FormatStrFormatter('%.f'))
+    ax1.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
     plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
@@ -222,14 +222,17 @@ def plotClassificationResults(spectrum, results, show_results, export=True, show
     isotope_lines = []
     for key, value in results.items():
         if value > settings.clf_display_threshold:
-            for i in range(len(isodata.clf_isotopes[key].peaks)):
-                line = plt.vlines(isodata.clf_isotopes[key].peaks[i],
+            for i in range(len(isodata.clf_isotopes[key].lines)):
+                line = plt.vlines(isodata.clf_isotopes[key].lines[i],
                                   0,
                                   max(spectrum.count_rate_bin_data) * 1.2,
                                   color=isodata.clf_isotopes[key].color,
                                   linewidth=2, alpha=value)
                 if i == 0:
                     isotope_lines.append(line)
+
+
+
 
     iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
                        f'{round(value * 100, 5)}%' for key, value in results.items()]
