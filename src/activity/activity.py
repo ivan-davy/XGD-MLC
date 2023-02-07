@@ -1,2 +1,2 @@
 def predictActivity(spectrum, confirmed_isotopes):
-    spectrum.generatePeaksData()
+    spectrum.generatePeaksData(confirmed_isotopes)

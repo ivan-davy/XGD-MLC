@@ -3,7 +3,7 @@ import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
 from pathlib import Path
-
+from matplotlib.patches import Polygon
 from matplotlib.ticker import FormatStrFormatter
 from scipy import optimize
 from config import settings, isodata
@@ -224,15 +224,24 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
         if value > settings.clf_display_threshold:
             for i in range(len(isodata.clf_isotopes[key].lines)):
                 line = plt.vlines(isodata.clf_isotopes[key].lines[i],
-                                  0,
+                                  spectrum.count_rate_bin_data[isodata.clf_isotopes[key].lines[i]],
                                   max(spectrum.count_rate_bin_data) * 1.2,
                                   color=isodata.clf_isotopes[key].color,
-                                  linewidth=2, alpha=value)
+                                  linewidth=2, alpha=value, zorder=0)
                 if i == 0:
                     isotope_lines.append(line)
 
-
-
+    for isotope_name, value in spectrum.peak_data.items():
+        for line_kev, peak in value.items():
+            x = [peak.left_b, peak.right_b, peak.right_b, peak.left_b]
+            y = [0, 0, spectrum.count_rate_bin_data[peak.right_b], spectrum.count_rate_bin_data[peak.left_b]]
+            plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
+                             spectrum.count_rate_bin_data[peak.left_b:peak.right_b],
+                             color=peak.isotope.color, step='post', alpha=1)
+            plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
+                             [linear(x, peak.baseline_linear_params[0], peak.baseline_linear_params[1])
+                              for x in spectrum.rebin_bins[peak.left_b:peak.right_b]],
+                             color='black', alpha=0.3, step='pre', edgecolor=peak.isotope.color)
 
     iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
                        f'{round(value * 100, 5)}%' for key, value in results.items()]

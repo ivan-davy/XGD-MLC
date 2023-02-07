@@ -1,4 +1,6 @@
 from scipy.stats import stats
+from classes.peakclass import Peak
+import config.isodata
 from mlclf.binary import *
 from config import settings
 import numpy as np
@@ -170,10 +172,16 @@ class Spectrum:
         if dtype == 'count_rate':
             return sum(self.count_rate_bin_data)
 
-    def calcPeakData(self):
-        self.peak_data = []
-        for line in self.src_known_isotope.lines:
-            return 0
+    def generatePeaksData(self, known_isotopes_names):
+        self.peak_data = {}
+        print(known_isotopes_names)
+        for isotope_name in known_isotopes_names:
+            peaks = {}
+            lines = config.isodata.clf_isotopes[isotope_name].lines
+            for line_kev in lines:
+                peaks[line_kev] = Peak(self, isotope_name, line_kev)
+            self.peak_data[isotope_name] = peaks
+
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
         self.rebin().calcCountRate()

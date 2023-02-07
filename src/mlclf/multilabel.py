@@ -203,9 +203,10 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
                 test_spectrum_proba_result_sorted[w] = test_spectrum_proba_result[w]
 
             if predict_act:
+                isotope_names_to_predict = {k: v for k, v in test_spectrum_proba_result_sorted.items()
+                                            if v > settings.predict_act_proba_threshold}.keys()
                 test_spectrum_act_result = activity.predictActivity(test_spectrum,
-                                                                test_spectrum_proba_result_sorted.keys())
-                print(test_spectrum_act_result)
+                                                                    isotope_names_to_predict)
 
             os.makedirs(os.path.dirname(user_args['Output']), exist_ok=True)
             settings.images_path.mkdir(exist_ok=True, parents=True)

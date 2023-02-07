@@ -92,7 +92,6 @@ def classify(**user_parsed_args):
 
         clf_proba_results, clf_act_results = mlClassifier(no_bkg_test_spectrum_set,
                                                           clf_out,
-                                                          bkg_spectrum,
                                                           predict_act=bool_parse(user_parsed_args['Act']),
                                                           show=bool_parse(user_parsed_args['Vis']),
                                                           show_progress=True,
@@ -183,7 +182,7 @@ if __name__ == '__main__':
                         type=str)
     parser.add_argument('-A', '--Act',
                         help='predict source activities?',
-                        default=settings.predict_activity,
+                        default=settings.predict_act,
                         type=str)
 
     args = vars(parser.parse_args())
