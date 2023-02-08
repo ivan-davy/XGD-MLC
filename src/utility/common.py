@@ -23,4 +23,3 @@ def bool_parse(val):
         return val == 1
     else:
         return False
-

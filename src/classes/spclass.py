@@ -174,7 +174,6 @@ class Spectrum:
 
     def generatePeaksData(self, known_isotopes_names):
         self.peak_data = {}
-        print(known_isotopes_names)
         for isotope_name in known_isotopes_names:
             peaks = {}
             lines = config.isodata.clf_isotopes[isotope_name].lines

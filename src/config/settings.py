@@ -39,7 +39,7 @@ clf_threshold = 0.6
 
 ###
 
-kev_cap = 1500
+kev_cap = 1500  # no less than 1500 (or highest line kev in clf_isotopes)
 default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manually with enforce-cal set to True
 peak_delta_x = 20
 
@@ -47,11 +47,11 @@ enforce_cal = True  # True is recommended. Forces default_cal to all spectra, pr
 bin_clf_only = False
 
 predict_act = True
-predict_act_proba_threshold = 0.2  # 0.2 recommended
+predict_act_proba_threshold = 0.22  # ~0.20 recommended
 
-visualize_progress = True
-show_results = False
-export_clf_result_images = True
+visualize_progress = False
+show_results = True
+export_clf_result_images = False
 
 ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)

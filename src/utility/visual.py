@@ -215,9 +215,18 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
     plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
     ax1.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
+    plt.subplots_adjust(right=0.74, left=0.05, top=0.88, bottom=0.1)
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
+
+    ax2_ticks = []
+    for key, val in spectrum.peak_data.items():
+        for key in val.keys():
+            if key > settings.predict_act_proba_threshold:
+                ax2_ticks.append(key)
+    ax2 = ax1.secondary_xaxis('top')
+    ax2.tick_params(axis='x', rotation=45)
+    ax2.set_xticks(ax2_ticks, minor=False)
 
     isotope_lines = []
     for key, value in results.items():
@@ -239,13 +248,12 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
                              spectrum.count_rate_bin_data[peak.left_b:peak.right_b],
                              color=peak.isotope.color, step='post', alpha=1)
             plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
-                             [linear(x, peak.baseline_linear_params[0], peak.baseline_linear_params[1])
-                              for x in spectrum.rebin_bins[peak.left_b:peak.right_b]],
-                             color='black', alpha=0.3, step='pre', edgecolor=peak.isotope.color)
+                             [peak.calc_bin_under_baseline(x) for x in range(peak.left_b, peak.right_b)],
+                             color='black', alpha=0.3, step='post', edgecolor=peak.isotope.color)
 
     iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
                        f'{round(value * 100, 5)}%' for key, value in results.items()]
-    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.92, 0.6))
+    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.94, 0.6))
 
     if show_results:
         plt.ioff()
