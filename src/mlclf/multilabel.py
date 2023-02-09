@@ -1,3 +1,4 @@
+import sys
 from sklearn.metrics import accuracy_score
 from sklearn.model_selection import train_test_split
 import pickle
@@ -6,34 +7,34 @@ import numpy as np
 from config import isodata, settings
 from utility.visual import mlShowAverage, plotClassificationResults
 from utility.data import loadSpectrumData
+from utility.common import bool_parse
 import os
 from simple_chalk import chalk
+from activity import activity
 
 
-def mlLoadSets():
+def mlLoadSets(user_args):
     from os import walk, path, scandir
     sp_set = {}
-    subdirs = [f.path for f in scandir(f'{settings.src_fileset_location}') if f.is_dir()]
+    subdirs = [f.path for f in scandir(f'{user_args["SrcSet"]}') if f.is_dir()]
     for subdir in subdirs:
         for root, dirs, files in walk(subdir):
             for file in files:
                 if file.endswith('.sps'):
                     dir_name = subdir.rsplit(os.sep, 1)[-1]
-                    if str(settings.test_fileset_location) not in dir_name:
+                    if str(user_args["TestSet"]) not in dir_name:
                         sp = loadSpectrumData(path.join(root, file))
                         if not any(sp.bin_data):
                             print(chalk.redBright(f'CORRUPTED: {sp.path}'))
                             if settings.delete_corrupted:
                                 os.remove(sp.path)
                                 continue
-                        known_isotope = isodata.clf_isotopes[dir_name]
-                        sp.isotope = known_isotope
+                        sp.src_known_isotope = isodata.clf_isotopes[dir_name]
                         sp_set[sp.path] = sp
     return sp_set
 
 
-def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
-                  show=False):
+def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section, show=False):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'average':
         spectrum_c = []
@@ -60,7 +61,7 @@ def mlCreateModel(sp_set,
     if feature_type == 'average':
         feature_names = [f'C{segment}' for segment in range(num_of_sections)]
 
-    dframe_location = f'{settings.clf_dataframe_directory}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
+    dframe_location = f'{settings.clf_dataframe_dir}{os.sep}{bins_per_sect}bps_{settings.kev_cap}' \
                       f'keV_{feature_type}_multi.dfr'
     data_dict, dataframe, y, model_data, labels, clf = {}, None, None, None, None, None
     try:
@@ -71,7 +72,7 @@ def mlCreateModel(sp_set,
             y = data['labels']
         print(chalk.green('Load complete.'))
     except FileNotFoundError:
-        print(chalk.red(f'Dataframe file not found. '), 'Creating a new one...\n')
+        print(chalk.yellow(f'Dataframe file not found. '), 'Creating a new one...\n')
         if feature_type == 'average':
             counter, y = 0, []
             data_features_set = {}
@@ -81,11 +82,12 @@ def mlCreateModel(sp_set,
                                                      bins_per_sect=bins_per_sect,
                                                      show=show)
                 data_features_set[key] = value.features_array
-                y.append(value.isotope.name)
+                y.append(value.src_known_isotope.name)
                 if show_progress:
                     counter += 1
                     print('\r', chalk.cyan(counter), '/', len(sp_set), key, end='')
             dataframe = pd.DataFrame.from_dict(data_features_set, orient='index', columns=feature_names)
+        os.makedirs(os.path.dirname(dframe_location), exist_ok=True)
         with open(dframe_location, 'wb+') as f:
             pickle.dump({
                 'dataframe': dataframe,
@@ -142,12 +144,13 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
     return res_proba
 
 
-def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **user_args):
+def mlClassifier(test_spectrum_set, out, predict_act=True,
+                 show=False, show_progress=True, show_results=True, export_images=True, **user_args):
     import pickle
     ml_clf_model = None
-    mdl_location = f'{settings.clf_model_directory}{os.sep}' \
+    mdl_location = f'{settings.clf_model_dir}{os.sep}' \
                    f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
-                   f'{"_scaled_" if user_args["Scale"] else "_"}' \
+                   f'{"_scaled_" if bool_parse(user_args["Scale"]) else "_"}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
     try:
         print(chalk.blue(f'Looking for {mdl_location}... '), end='')
@@ -155,48 +158,75 @@ def mlClassifier(test_spectrum_set, out, show, show_progress, show_results, **us
             ml_clf_model = pickle.load(f)
         print(chalk.green('File found.'))
     except FileNotFoundError:
-        print(chalk.red(f'\nModel file not found. '), 'Creating a new one...')
-        sp_set = mlLoadSets()
+        print(chalk.yellow(f'\nModel file not found. '), 'Creating a new one...')
+        sp_set = mlLoadSets(user_args)
         ml_clf_model = mlCreateModel(sp_set,
                                      user_args["Feature"],
                                      user_args["Method"],
-                                     scale=user_args["Scale"],
-                                     show=show,
+                                     scale=bool_parse(user_args["Scale"]),
+                                     show=False,
                                      show_progress=show_progress)
+        os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
         with open(mdl_location, 'wb+') as f:
             pickle.dump(ml_clf_model, f)
         print(chalk.green('Done!'))
     finally:
         print(chalk.blue('\nPerforming multilabel classification...'))
-        results, counter = {}, 0
+        results_proba, results_act, counter = {}, {}, 0
+        app, vis = None, None
+        if show:
+            from PyQt5.QtWidgets import QApplication
+            from classes.visualizer import Visualizer
+            app = QApplication(sys.argv)
+            vis = Visualizer()
+
         for test_spectrum in test_spectrum_set:
             if show_progress:
                 counter += 1
                 print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
 
-            test_spectrum_result = {}
-            res_proba = mlClassification(test_spectrum, ml_clf_model,
-                                         user_args["Feature"],
-                                         scale=user_args["Scale"])
-            i = 0
+            #  Classification + probability predictions
+            test_spectrum_proba_result, i = {}, 0
+            res_proba = mlClassification(test_spectrum, ml_clf_model, user_args["Feature"], scale=user_args["Scale"])
+
             for key, value in isodata.clf_isotopes.items():
                 custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
                 if custom_proba > 1:
                     custom_proba = 1
-                test_spectrum_result[key] = round(custom_proba, 3)
+                test_spectrum_proba_result[key] = round(custom_proba, 3)
                 i += 1
 
-            results[test_spectrum.path] = test_spectrum_result
-            sorted_result_keys = sorted(test_spectrum_result, key=test_spectrum_result.get, reverse=True)
-            test_spectrum_result_sorted = {}
+            results_proba[test_spectrum.path] = test_spectrum_proba_result
+            sorted_result_keys = sorted(test_spectrum_proba_result, key=test_spectrum_proba_result.get, reverse=True)
+            test_spectrum_proba_result_sorted = {}
             for w in sorted_result_keys:
-                test_spectrum_result_sorted[w] = test_spectrum_result[w]
+                test_spectrum_proba_result_sorted[w] = test_spectrum_proba_result[w]
 
+            if predict_act:
+                isotope_names_to_predict = {k: v for k, v in test_spectrum_proba_result_sorted.items()
+                                            if v > settings.predict_act_proba_threshold}.keys()
+                test_spectrum_act_result = activity.predictActivity(test_spectrum,
+                                                                    isotope_names_to_predict)
+
+            os.makedirs(os.path.dirname(user_args['Output']), exist_ok=True)
+            settings.images_path.mkdir(exist_ok=True, parents=True)
             out.write(f'{test_spectrum.path:<100} '
                       f'{settings.ml_clf_bins_per_section:<3}bps '
                       f'{user_args["Method"]:<15}'
-                      f'{test_spectrum_result_sorted}\n')
-            if show_results:
-                plotClassificationResults(test_spectrum, test_spectrum_result_sorted)
-        print(chalk.green(f'\nClassification results exported to {settings.clf_report_location}'))
-        return results
+                      f'{test_spectrum_proba_result_sorted}\n')
+
+            if show_results or export_images:
+                plotClassificationResults(test_spectrum,
+                                          test_spectrum_proba_result_sorted,
+                                          show_results=show_results,
+                                          show=show,
+                                          export=export_images,
+                                          vis=vis)
+        print(chalk.green(f'\nClassification results exported to {user_args["Output"]}'))
+        if export_images:
+            print(chalk.green(f'Images exported to {settings.images_path}'))
+
+        if show:
+            app.quit()
+
+        return results_proba, results_act

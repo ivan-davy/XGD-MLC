@@ -2,8 +2,11 @@ import math
 import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
+from pathlib import Path
+from matplotlib.ticker import FormatStrFormatter
 from scipy import optimize
 from config import settings, isodata
+from utility.common import linear
 
 
 def plotAllBinData(spectrum):
@@ -31,10 +34,6 @@ GAUSS_CUSTOM_PARAMETERS = ('A', 'B', 'Amp', 'Mu', 'Sigma')
 
 def gaussCustom(x, a, b, amp, mu, sig):
     return a * x + b + amp / (math.sqrt(2 * math.pi) * sig) * math.exp(-0.5 * ((x - mu) / sig) ** 2)
-
-
-def linear(x, a, b):
-    return a * x + b
 
 
 def fitGaussCustom(x_data, y_data, x_range, guess, to_plot):
@@ -104,12 +103,12 @@ def plotCalcBkg(spectrum, bkg):
     spectrum.calcCountRate()
     bkg.calcCountRate()
     fig, ax1 = plt.subplots(1, constrained_layout=True)
-    # fig.suptitle(spectrum.name + ': count rate before and after the removal of background events')
+    fig.suptitle(spectrum.name + ': count rate before and after the removal of background events')
     ax1.set(xlabel='Energy (keV)', ylabel='Count rate')
     ax1.set_xlim([0, 1500])
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='purple', label='137Cs')
     ax1.step(bkg.rebin_bins, bkg.count_rate_bin_data, color='green', label='Bkg')
-    spectrum.subtractBkg(bkg)
+    spectrum.subtractCountRateBkg(bkg)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', label='137Cs-bkg')
     plt.legend()
     fig.canvas.manager.full_screen_toggle()
@@ -120,7 +119,7 @@ def plotBinData(spectrum):
     fig, ax1 = plt.subplots(1)
     ax1.set_title(spectrum.path)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
-    #  fig.canvas.manager.full_screen_toggle()
+    fig.canvas.manager.full_screen_toggle()
     plt.grid(True)
     plt.show()
 
@@ -187,6 +186,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     from matplotlib.lines import Line2D
     num_of_sections = int(len(spectrum.rebin_bins) / bins_per_sect)
     fig, ax1 = plt.subplots(constrained_layout=True)
+    fig.set_size_inches(12, 6, forward=True)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     for section in range(num_of_sections - 1):
         x = np.linspace(section * bins_per_sect, (section + 1) * bins_per_sect)
@@ -204,33 +204,63 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     plt.show()
 
 
-def plotClassificationResults(spectrum, results):
+def plotClassificationResults(spectrum, results, show_results=True, export=True, show=True, vis=None):
     fig, ax1 = plt.subplots(1)
-    fig.set_size_inches(10, 6)
+    fig.set_size_inches(12, 6, forward=True)
     plt.grid(True)
     plt.rcParams['font.family'] = 'monospace'
     fig.suptitle(spectrum.path, weight='bold')
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
     plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
-    plt.subplots_adjust(right=0.7, left=0.05, top=0.93, bottom=0.1)
+    ax1.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
+    plt.subplots_adjust(right=0.74, left=0.05, top=0.88, bottom=0.1)
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
+
+    ax2_ticks = []
+    for key, val in spectrum.peak_data.items():
+        for key in val.keys():
+            if key > settings.predict_act_proba_threshold:
+                ax2_ticks.append(key)
+    ax2 = ax1.secondary_xaxis('top')
+    ax2.tick_params(axis='x', rotation=45)
+    ax2.set_xticks(ax2_ticks, minor=False)
 
     isotope_lines = []
     for key, value in results.items():
         if value > settings.clf_display_threshold:
-            for i in range(len(isodata.clf_isotopes[key].peaks)):
-                line = plt.vlines(isodata.clf_isotopes[key].peaks[i],
-                                  0,
+            for i in range(len(isodata.clf_isotopes[key].lines)):
+                line = plt.vlines(isodata.clf_isotopes[key].lines[i],
+                                  spectrum.count_rate_bin_data[isodata.clf_isotopes[key].lines[i]],
                                   max(spectrum.count_rate_bin_data) * 1.2,
                                   color=isodata.clf_isotopes[key].color,
-                                  linewidth=2, alpha=value)
+                                  linewidth=2, alpha=value, zorder=0)
                 if i == 0:
                     isotope_lines.append(line)
 
+    for isotope_name, value in spectrum.peak_data.items():
+        for line_kev, peak in value.items():
+            x = [peak.left_b, peak.right_b, peak.right_b, peak.left_b]
+            y = [0, 0, spectrum.count_rate_bin_data[peak.right_b], spectrum.count_rate_bin_data[peak.left_b]]
+            plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
+                             spectrum.count_rate_bin_data[peak.left_b:peak.right_b],
+                             color=peak.isotope.color, step='post', alpha=1)
+            plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
+                             [peak.calc_bin_under_baseline(x) for x in range(peak.left_b, peak.right_b)],
+                             color='black', alpha=0.3, step='post', edgecolor=peak.isotope.color)
+
     iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
                        f'{round(value * 100, 5)}%' for key, value in results.items()]
-    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.95, 0.6))
+    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.94, 0.6))
 
-    plt.show()
+    if show_results:
+        plt.ioff()
+        plt.show()
+    if export:
+        img_path = f'{settings.images_path.joinpath(Path(spectrum.path).resolve().stem)}.png'
+        plt.savefig(img_path, bbox_inches='tight')
+        plt.close()
+        if show and vis is not None:
+            vis.show_image(img_path)
+

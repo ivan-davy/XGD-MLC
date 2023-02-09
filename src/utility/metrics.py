@@ -98,10 +98,10 @@ def getClfMetrics(results, **user_args):
             per_isotope_total[unique_isotope] += 1
             if val[unique_isotope] > settings.clf_threshold:
                 correctly_guessed += 1
-                per_isotope_correctly_guessed[unique_isotope] += 1
+                if unique_isotope in key:
+                    per_isotope_correctly_guessed[unique_isotope] += 1
         accuracy = correctly_guessed / len(unique_isotopes)
         total_sum += accuracy
-
 
     print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
     print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))

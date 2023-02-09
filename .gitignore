@@ -1,8 +1,7 @@
-dataframes/bin/*
-dataframes/multi/*
-models/bin/*
-models/multi/*
-reports/*
+dataframes
+models
+reports
+images
 sps/bkgs/*
 sps/srcs/*
 sps/test/*

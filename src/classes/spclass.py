@@ -1,5 +1,6 @@
 from scipy.stats import stats
-
+from classes.peakclass import Peak
+import config.isodata
 from mlclf.binary import *
 from config import settings
 import numpy as np
@@ -20,7 +21,8 @@ class Spectrum:
         self.count_rate_bin_data = None
         self.features_array = None
         self.has_source = None
-        self.isotope = None
+        self.src_known_isotope = None
+        self.peak_data = None
         self.corrupted = False
 
     def __str__(self):
@@ -155,11 +157,11 @@ class Spectrum:
                 del self.rebin_bin_data[settings.kev_cap:]
                 del self.count_rate_bin_data[settings.kev_cap:]
 
-    def subtractBkg(self, bkg):
+    def subtractCountRateBkg(self, bkg):
         if bkg.count_rate_bin_data is None:
             bkg.calcCountRate()
         self.count_rate_bin_data = [self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i]
-                               if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
+                                    if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
                                     for i in range(len(self.count_rate_bin_data))]
 
     def getNumOfEvents(self, dtype='count_rate'):
@@ -169,6 +171,15 @@ class Spectrum:
             return sum(self.bin_data)
         if dtype == 'count_rate':
             return sum(self.count_rate_bin_data)
+
+    def generatePeaksData(self, known_isotopes_names):
+        self.peak_data = {}
+        for isotope_name in known_isotopes_names:
+            peaks = {}
+            lines = config.isodata.clf_isotopes[isotope_name].lines
+            for line_kev in lines:
+                peaks[line_kev] = Peak(self, isotope_name, line_kev)
+            self.peak_data[isotope_name] = peaks
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
         self.rebin().calcCountRate()
@@ -184,8 +195,8 @@ class Spectrum:
         else:
             return 'Background'
 
-    def pearsonBinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,  # Ineffective method, not implemented
-                              tolerance=1, los=0.05):
+    def pearsonBinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,
+                              tolerance=1, los=0.05):  # Ineffective method, not implemented
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):
@@ -210,8 +221,8 @@ class Spectrum:
         else:
             return 'Background'
 
-    def chi2BinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,  # Ineffective method, not implemented
-                           tolerance=3, los=0.05):
+    def chi2BinaryClassify(self, bkg, num_of_sections=settings.bin_clf_sections_qty,
+                           tolerance=3, los=0.05):  # Ineffective method, not implemented
         bkg_counts_per_section = sum(bkg.count_rate_bin_data) / num_of_sections
         bkg_sections_avg, bkg_sections_err, section_borders, bin_iter, sec_iter, temp_sum = [], [], [0, ], 0, 0, 0
         for section in range(num_of_sections):
