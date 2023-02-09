@@ -3,7 +3,6 @@ import numpy as np
 import scipy.special
 from matplotlib import pyplot as plt
 from pathlib import Path
-from matplotlib.patches import Polygon
 from matplotlib.ticker import FormatStrFormatter
 from scipy import optimize
 from config import settings, isodata
@@ -104,12 +103,12 @@ def plotCalcBkg(spectrum, bkg):
     spectrum.calcCountRate()
     bkg.calcCountRate()
     fig, ax1 = plt.subplots(1, constrained_layout=True)
-    # fig.suptitle(spectrum.name + ': count rate before and after the removal of background events')
+    fig.suptitle(spectrum.name + ': count rate before and after the removal of background events')
     ax1.set(xlabel='Energy (keV)', ylabel='Count rate')
     ax1.set_xlim([0, 1500])
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='purple', label='137Cs')
     ax1.step(bkg.rebin_bins, bkg.count_rate_bin_data, color='green', label='Bkg')
-    spectrum.subtractBkg(bkg)
+    spectrum.subtractCountRateBkg(bkg)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', label='137Cs-bkg')
     plt.legend()
     fig.canvas.manager.full_screen_toggle()
@@ -120,7 +119,7 @@ def plotBinData(spectrum):
     fig, ax1 = plt.subplots(1)
     ax1.set_title(spectrum.path)
     ax1.step(spectrum.rebin_bins, spectrum.count_rate_bin_data, color='black', where='post')
-    #  fig.canvas.manager.full_screen_toggle()
+    fig.canvas.manager.full_screen_toggle()
     plt.grid(True)
     plt.show()
 

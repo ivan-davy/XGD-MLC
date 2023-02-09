@@ -157,11 +157,11 @@ class Spectrum:
                 del self.rebin_bin_data[settings.kev_cap:]
                 del self.count_rate_bin_data[settings.kev_cap:]
 
-    def subtractBkg(self, bkg):
+    def subtractCountRateBkg(self, bkg):
         if bkg.count_rate_bin_data is None:
             bkg.calcCountRate()
         self.count_rate_bin_data = [self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i]
-                               if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
+                                    if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
                                     for i in range(len(self.count_rate_bin_data))]
 
     def getNumOfEvents(self, dtype='count_rate'):
@@ -180,7 +180,6 @@ class Spectrum:
             for line_kev in lines:
                 peaks[line_kev] = Peak(self, isotope_name, line_kev)
             self.peak_data[isotope_name] = peaks
-
 
     def sigmaBinaryClassify(self, bkg, thr_multiplier=3):  # sigma
         self.rebin().calcCountRate()

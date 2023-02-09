@@ -17,8 +17,6 @@ class Peak:
         self.area = sum([spectrum.count_rate_bin_data[kev] - self.calc_bin_under_baseline(kev)
                          for kev in range(self.left_b, self.right_b)])
 
-        print('\n', self.raw_area, self.area)
-
     def __str__(self):
         return str(self.__class__) + '\n' + '\n'.join(
             ('{} = {}'.format(item, self.__dict__[item]) for item in self.__dict__))
