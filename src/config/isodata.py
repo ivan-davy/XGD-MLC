@@ -1,7 +1,6 @@
 from datetime import date
 from classes.isoclass import Isotope
 
-
 clf_proba_custom_multipliers = {  # >: more detections, <: less detections
     'Na22': 6,
     'Co60': 2,
@@ -25,4 +24,12 @@ clf_isotopes = {
 
 test_sps_acquisition_date = date(2022, 7, 1)
 
-cal_area_to_act_multiplier = {15: 3600}  # {R(cm): A(Bq) / S = k = multiplier}
+cal_area_to_act_multiplier_distance = 15  # R(cm)
+cal_area_to_act_multiplier = {  # {Isotope: A(Bq) / S = k = multiplier}
+    'Na22': 1050,
+    'Co60': 6900,
+    'Cs137': 3600,
+    'Eu152': 390,
+    'Am241': 14350
+}
+cal_act_uncertainty_threshold_kBq = 200  # Considers activities higher than this unrealistic (strictly visual)
