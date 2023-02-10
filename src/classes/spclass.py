@@ -7,20 +7,21 @@ import numpy as np
 
 
 class Spectrum:
-    def __init__(self, path, channel_qty, real_time_int, live_time_int, cal, bin_data):
+    def __init__(self, path, channel_qty, real_time_int, live_time_int, cal, bin_data, distance):
         self.path = path
         self.channel_qty = channel_qty
         self.real_time_int = real_time_int
         self.live_time_int = live_time_int
         self.cal = cal
         self.bin_data = bin_data
+        self.distance_from_src = distance
         self.calib_bins = None
         self.calib_bin_data = None
         self.rebin_bins = None
         self.rebin_bin_data = None
         self.count_rate_bin_data = None
         self.features_array = None
-        self.has_source = None
+        self.has_src = None
         self.src_known_isotope = None
         self.peak_data = None
         self.corrupted = False

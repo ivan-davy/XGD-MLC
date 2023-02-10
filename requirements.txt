@@ -6,3 +6,4 @@ scipy~=1.10.0
 matplotlib~=3.6.3
 simple_chalk~=0.1.0
 PyQt5~=5.15.9
+//unix: libxcb-xinerama0
