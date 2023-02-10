@@ -48,11 +48,12 @@ enforce_cal = True  # True is recommended. Forces default_cal to all spectra, pr
 bin_clf_only = False
 
 predict_act = True
-predict_act_proba_threshold = 0.22  # ~0.20 recommended
+clf_show_threshold = 0.2  # ~0.20 recommended
 
-visualize_progress = False
-show_results = True
-export_clf_result_images = False
+
+visualize_progress = True
+show_results = False
+export_clf_result_images = True
 
 ml_perform_data_scaling = True  # True is recommended
 delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)

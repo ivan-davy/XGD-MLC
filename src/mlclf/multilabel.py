@@ -193,6 +193,9 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
                 custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
                 if custom_proba > 1:
                     custom_proba = 1
+                if custom_proba < settings.clf_show_threshold:
+                    i += 1
+                    continue
                 test_spectrum_proba_result[key] = round(custom_proba, 3)
                 i += 1
 
@@ -202,9 +205,9 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
             for w in sorted_result_keys:
                 test_spectrum_proba_result_sorted[w] = test_spectrum_proba_result[w]
 
+            test_spectrum_act_result = {key: None for key in test_spectrum_proba_result_sorted.keys()}
             if predict_act:
-                isotope_names_to_predict = {k: v for k, v in test_spectrum_proba_result_sorted.items()
-                                            if v > settings.predict_act_proba_threshold}.keys()
+                isotope_names_to_predict = test_spectrum_proba_result_sorted.keys()
                 test_spectrum_act_result = activity.predictActivity(test_spectrum,
                                                                     isotope_names_to_predict)
 
@@ -218,6 +221,7 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
             if show_results or export_images:
                 plotClassificationResults(test_spectrum,
                                           test_spectrum_proba_result_sorted,
+                                          test_spectrum_act_result,
                                           show_results=show_results,
                                           show=show,
                                           export=export_images,

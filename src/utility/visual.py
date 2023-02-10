@@ -204,7 +204,7 @@ def mlShowAverage(spectrum, sp_c, bins_per_sect=settings.ml_bin_clf_bins_per_sec
     plt.show()
 
 
-def plotClassificationResults(spectrum, results, show_results=True, export=True, show=True, vis=None):
+def plotClassificationResults(spectrum, results, act_results, show_results=True, export=True, show=True, vis=None):
     fig, ax1 = plt.subplots(1)
     fig.set_size_inches(12, 6, forward=True)
     plt.grid(True)
@@ -214,14 +214,24 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
     plt.xlim(0, settings.kev_cap)
     plt.ylim(0, max(spectrum.count_rate_bin_data) * 1.2)
     ax1.yaxis.set_major_formatter(FormatStrFormatter('%.1f'))
-    plt.subplots_adjust(right=0.74, left=0.05, top=0.88, bottom=0.1)
+    plt.subplots_adjust(right=0.98, left=0.05, top=0.88, bottom=0.18)
     plt.ylabel('Count rate')
     plt.xlabel('Energy (keV)')
+
+    info = f'CHANNELS:  {spectrum.channel_qty}\n' \
+           f'LIVET (s): {spectrum.live_time_int}\n' \
+           f'REALT (s): {spectrum.real_time_int}\n' \
+           f'DIST (cm): {int(spectrum.distance_from_src)}'
+
+    ax1.text(0.87, 0.96,
+             info,
+             transform=ax1.transAxes, fontsize=10,
+             verticalalignment='top', bbox=dict(facecolor='white'))
 
     ax2_ticks = []
     for key, val in spectrum.peak_data.items():
         for key in val.keys():
-            if key > settings.predict_act_proba_threshold:
+            if key > settings.clf_show_threshold:
                 ax2_ticks.append(key)
     ax2 = ax1.secondary_xaxis('top')
     ax2.tick_params(axis='x', rotation=45)
@@ -241,18 +251,22 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
 
     for isotope_name, value in spectrum.peak_data.items():
         for line_kev, peak in value.items():
-            x = [peak.left_b, peak.right_b, peak.right_b, peak.left_b]
-            y = [0, 0, spectrum.count_rate_bin_data[peak.right_b], spectrum.count_rate_bin_data[peak.left_b]]
             plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
                              spectrum.count_rate_bin_data[peak.left_b:peak.right_b],
-                             color=peak.isotope.color, step='post', alpha=1)
+                             color=peak.isotope.color, step='post', alpha=results[isotope_name])
             plt.fill_between(spectrum.rebin_bins[peak.left_b:peak.right_b],
                              [peak.calc_bin_under_baseline(x) for x in range(peak.left_b, peak.right_b)],
-                             color='black', alpha=0.3, step='post', edgecolor=peak.isotope.color)
+                             color='black', alpha=0.3 * results[isotope_name], step='post',
+                             edgecolor=peak.isotope.color)
 
-    iso_legend_text = [f'{isodata.clf_isotopes[key].name:<15}'
-                       f'{round(value * 100, 5)}%' for key, value in results.items()]
-    fig.legend(isotope_lines, iso_legend_text, bbox_to_anchor=(0.94, 0.6))
+    iso_legend_text = [f'{f"{isodata.clf_isotopes[key].name}:":<14}'
+                       f'{f" {round(int(value * 100), 5)}%":<7} ~{round(act_results[key] / 1000):<3}'
+                       f'{isUncertain(round(act_results[key] / 1000))} kBq'
+                       for key, value in results.items()]
+    legend = fig.legend(isotope_lines, iso_legend_text, loc='lower center', frameon=1, fancybox=False,
+                        ncol=math.ceil(len(isotope_lines) / 2))
+    frame = legend.get_frame()
+    frame.set_edgecolor('black')
 
     if show_results:
         plt.ioff()
@@ -264,3 +278,6 @@ def plotClassificationResults(spectrum, results, show_results=True, export=True,
         if show and vis is not None:
             vis.show_image(img_path)
 
+
+def isUncertain(val):
+    return '?' if val > isodata.cal_act_uncertainty_threshold_kBq else ''

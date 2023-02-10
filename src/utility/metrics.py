@@ -62,7 +62,7 @@ def getClfMetrics(results, **user_args):
         match = True
         for isotope in clf_isotopes.keys():
             if isotope in key:
-                if not (val[isotope] > settings.clf_threshold):
+                if not (val.get(isotope, 0) > settings.clf_threshold):
                     match = False
                     break
         if match:
@@ -76,7 +76,7 @@ def getClfMetrics(results, **user_args):
         for isotope in clf_isotopes.keys():
             if isotope in key:
                 expected_isotopes += 1
-                if val[isotope] > settings.clf_threshold:
+                if val.get(isotope, 0) > settings.clf_threshold:
                     correctly_guessed += 1
         if expected_isotopes != 0:
             precision = correctly_guessed / expected_isotopes
@@ -92,11 +92,11 @@ def getClfMetrics(results, **user_args):
         for isotope in clf_isotopes.keys():
             if isotope in key:
                 unique_isotopes.add(isotope)
-            if val[isotope] > settings.clf_threshold:
+            if val.get(isotope, 0) > settings.clf_threshold:
                 unique_isotopes.add(isotope)
         for unique_isotope in unique_isotopes:
             per_isotope_total[unique_isotope] += 1
-            if val[unique_isotope] > settings.clf_threshold:
+            if val.get(unique_isotope, 0) > settings.clf_threshold:
                 correctly_guessed += 1
                 if unique_isotope in key:
                     per_isotope_correctly_guessed[unique_isotope] += 1

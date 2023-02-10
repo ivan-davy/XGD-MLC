@@ -16,6 +16,4 @@ def predictActivity(spectrum, confirmed_isotopes):
                                     * ((spectrum.distance_from_src + settings.detector_inner_r) /
                                        (isodata.cal_area_to_act_multiplier_distance + settings.detector_inner_r)) \
                                     ** 2
-
-    print('\n', spectrum.distance_from_src, isotope_peak_sums, predicted_activities)
     return predicted_activities

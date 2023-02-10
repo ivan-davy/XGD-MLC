@@ -32,3 +32,4 @@ cal_area_to_act_multiplier = {  # {Isotope: A(Bq) / S = k = multiplier}
     'Eu152': 390,
     'Am241': 14350
 }
+cal_act_uncertainty_threshold_kBq = 200  # Considers activities higher than this unrealistic (strictly visual)
