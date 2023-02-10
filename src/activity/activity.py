@@ -1,4 +1,5 @@
-from config import isodata
+from config import isodata, settings
+
 
 def predictActivity(spectrum, confirmed_isotopes):
     spectrum.generatePeaksData(confirmed_isotopes)
@@ -11,8 +12,9 @@ def predictActivity(spectrum, confirmed_isotopes):
 
     predicted_activities = {}
     for key, val in isotope_peak_sums.items():
-        predicted_activities[key] = val * list(isodata.cal_area_to_act_multiplier.values())[0] \
-                                    * (spectrum.distance_from_src / list(isodata.cal_area_to_act_multiplier.keys())[0]) \
+        predicted_activities[key] = val * isodata.cal_area_to_act_multiplier[key] \
+                                    * ((spectrum.distance_from_src + settings.detector_inner_r) /
+                                       (isodata.cal_area_to_act_multiplier_distance + settings.detector_inner_r)) \
                                     ** 2
 
     print('\n', spectrum.distance_from_src, isotope_peak_sums, predicted_activities)
