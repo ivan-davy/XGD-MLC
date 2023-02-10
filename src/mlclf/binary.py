@@ -26,7 +26,7 @@ def mlLoadBinarySets(user_args):
                     if settings.delete_corrupted:
                         os.remove(sp.path)
                         continue
-                sp.has_source = True
+                sp.has_src = True
                 source_sp_set.append(sp)
     for root, dirs, files in walk(user_args["BkgSet"]):
         for file in files:
@@ -37,7 +37,7 @@ def mlLoadBinarySets(user_args):
                     if settings.delete_corrupted:
                         os.remove(sp.path)
                         continue
-                sp.has_source = False
+                sp.has_src = False
                 background_sp_set.append(sp)
     return source_sp_set, background_sp_set
 

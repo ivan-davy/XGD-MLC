@@ -24,3 +24,5 @@ clf_isotopes = {
 }
 
 test_sps_acquisition_date = date(2022, 7, 1)
+
+cal_area_to_act_multiplier = {15: 3600}  # {R(cm): A(Bq) / S = k = multiplier}

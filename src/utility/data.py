@@ -11,10 +11,12 @@ def loadSpectrumData(sps_filename):
         num_of_bins = (unpack_from('h', buffer, 0))[0]
         calibration = unpack_from('ff', buffer, 440)
         bin_data = unpack_from(str(num_of_bins) + 'i', buffer, 1024)
-    spectrum = Spectrum(sps_filename, num_of_bins, real_time_int, live_time_int, calibration, bin_data)
+        distance = (unpack_from('f', buffer, 342))[0]
+    spectrum = Spectrum(sps_filename, num_of_bins, real_time_int,
+                        live_time_int, calibration, bin_data,
+                        distance=distance)
     if not spectrum.bin_data:
         spectrum.corrupted = True
-        print(spectrum.path)
     if spectrum.cal[0] == 0:
         if settings.enforce_cal:
             spectrum.cal = settings.default_cal

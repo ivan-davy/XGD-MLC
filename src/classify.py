@@ -116,19 +116,19 @@ if __name__ == '__main__':
         epilog=chalk.magenta('Ivan Davydov @ NRNU MEPhI, 2023'))
 
     parser.add_argument('-T', '--TestSet',
-                        help='test spectra set location',
+                        help='test spectra set absolute location',
                         default=settings.test_fileset_dir,
                         type=str)
     parser.add_argument('-S', '--SrcSet',
-                        help='sources spectra set location',
+                        help='sources spectra set absolute location',
                         default=settings.src_fileset_dir,
                         type=str)
     parser.add_argument('-B', '--BkgSet',
-                        help='background spectra set location',
+                        help='background spectra set absolute location',
                         default=settings.bkg_fileset_dir,
                         type=str)
     parser.add_argument('-b', '--Bkg',
-                        help='background reference spectrum path (required for non-ml methods)',
+                        help='background reference absolute spectrum path (required for non-ml methods)',
                         default=settings.bkg_file_path,
                         type=str)
     parser.add_argument('-m', '--MethodBinary',
@@ -152,11 +152,11 @@ if __name__ == '__main__':
                         default=settings.clf_feature_type,
                         type=str)
     parser.add_argument('-o', '--OutputBinary',
-                        help='binary classification report file path',
+                        help='binary classification absolute report file path',
                         default=settings.bin_clf_report_path,
                         type=str)
     parser.add_argument('-O', '--Output',
-                        help='multilabel classification report file path',
+                        help='multilabel classification report absolute file path',
                         default=settings.clf_report_path,
                         type=str)
 
