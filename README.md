@@ -3,15 +3,15 @@
 
 ## What does it do?
 XGD-MLC software uses scikit-learn ML-algorithms, enabling it to predict:
-* Are radioactive source signatures (energy peaks) present in a given gamma-spectrum or not;
+* Are radioactive source signatures (energy peaks) present in a given gamma-spectrum;
 * If there are peaks present, what gamma emmitters (isotopes) caused them;
-* Gives a rough prediction of detected isotopes' decay rate (activity).
+* Detected isotopes' approximate decay rate (activity).
 
-## Xenon Gamma-Detector? Gamma-spectra? What does all of this mean, briefly?
+## What does all of this mean, briefly?
 **Gamma-rays (gamma-quanta)** are basically deadly, very high-energy *photons* (yes, the ones that your eyes absorb right now to make you able to read all of this). An enourmous variety of different devices exist that are capable of detecting such hard-hitting particles, all created for their own scientific goal. One of such detectors is a **Xenon Gamma-Spectrometer**, developed by department №7 of Moscow's **NRNU MEPhI** (below I'll leave a link to my uni's paper thouroughly describing it, if you are interested in how this piece of machinery operates).
 
 In its "raw" state, gamma-spectrum is just a sequence of X and Y values, binary-encoded to a *.sps* file with additional useful data regarding the specifics of how it was recorded (distance from the detector's body to the radioactive source, live/actual spectrum recording time, etc -- *more details below*).
-It is basically a histogram, where X-values correspond to ADC's channels (which transforms analog signal from the detector to a digital form), and Y-values are quantities of gamma-ray registrations in a given ADC channel. To give this histogram physical meaning, it first has to be calibrated. This process streches and displaces the histogram in such a way that allows to present X-values as keV's (as energy). This action of resizing the X-axis makes bins hard to work with -- so they are standartized (rebinned: [0, 1, 2, 3...]) and divided by live spectra acquisition time, transforming the Y-values from counts to count rates.
+It is basically a histogram, where X-values are proportional to energy and correspond to ADC's channels (it transforms analog signal from the detector to a digital form), and Y-values are quantities of gamma-ray registrations in a given ADC channel. To give this histogram physical meaning, it first has to be calibrated. This process streches and displaces the histogram in such a way that allows to present X-values as keV's. This action of resizing the X-axis makes bins hard to work with -- so they are standartized (rebinned: [0, 1, 2, 3...]) and divided by live spectra acquisition time, transforming the Y-values from counts to count rates.
 
 ## Why would this be useful to anyone?
 A valid energy spectra of an object or environment can be used to make conclusions about the presence of gamma-emitting nuclei, which makes their analisys useful for:
@@ -38,7 +38,7 @@ At first, the whole dataset gets binary-classified (has gamma-signature / doesn'
 Both binary and multilabel steps require different datasets and models, so they are stored in program's filesystem separately.
 
 
-## Umm... 😐
+## 😐...
 
 Indeed! To sum it up, these are the general steps the program does to give user a classification result:
 
@@ -57,9 +57,9 @@ Indeed! To sum it up, these are the general steps the program does to give user 
 13. Loads .sps filesets (to learn) from their designated directories (sps/srcs, sps/bkgs by default), placing the spectra data into instances of *Spectrum* class;
 14. Finds features (selected by user) in all datasets, creates a new dataframe;
 15. Creates a user-selected multi-label model, evaluates its preliminary performance;
-17. Proceeds to activity prediction (if configured). Calculates peak data, creating *Peak*-class objects;
 16. Performs multi-label classification. Shows the gamma-spectrum classification result graph (detected peaks, probabilities, gamma-source activities - exports it to /images, if configured). Exports results to report file (default path /reports/clf_report.txt), calculates metrics (EMR, Accuracy, Precision) and prints them to CLI;
-17. Exits.
+17. Proceeds to activity prediction (if configured). Calculates peak data, creating *Peak*-class objects;
+18. Exits.
 
 
 
@@ -67,7 +67,7 @@ Indeed! To sum it up, these are the general steps the program does to give user 
 
 Clone the software, place it wherever you like. Now, you will need a dataset. Here's the one I acquired using the XGD (several thousand spectra -- it took... hours and hours) and used during development and testing:
 
-With this dataset, you will be able to work with Na22, Co60, Cs137, Eu152 and Am241 (the latter two are the tricky ones, you will see why). Extract the files from the archive into the program's root directory. After that, you can either configure various parameters via config/settings.py file, or straight up start up the program via the terminal (or your preferred IDE) and use supported modifiers there to change classification parameters. Here's what CLI can handle:
+With this dataset, you will be able to work with Na22, Co60, Cs137, Eu152 and Am241 (the latter two are the tricky ones, you will see why). Extract the files from the archive into the program's root directory. After that, you can either configure various parameters via config/settings.py file, or straight up start up the program via the terminal (or your preferred IDE) and use supported modifiers there to change classification parameters. Here's what CLI can process:
 
 # TABLE
 
@@ -76,4 +76,4 @@ Here's some examples:
 # EXAMPLES
 
 ## It doesn't work / something's broken / your code sucks!
-If that's the case, please, notify me. I plan to keep working on this for some time even after I defend my master's thesis. I will try to fix the issue. Also tell me if you find any inefficiencies / horrible code practices. I'm here to study. Feel free to implement and improve my code in your own projects, if you found it useful (I'd be grateful if you at least mention me, though!)
+If that's the case, please, notify me. I plan to keep working on this for some time even after I defend my master's thesis. I will try to fix the issue. Also tell me if you find any inefficiencies / horrible code practices (I'm here to study). Feel free to implement and improve my code in your own projects, if you found it useful (I'd be grateful if you at least mention me, though!)
