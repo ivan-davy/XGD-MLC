@@ -138,6 +138,8 @@ class Spectrum:
 
             y2 += np.where(different_cell, contrib, 0.)
             self.rebin_bin_data = (y2 * self.cal[0]).tolist()
+            if settings.keep_redundant_data is False:
+                self.rebin_bin_data = self.rebin_bin_data[:int(settings.kev_cap)]
         return self
 
     def calcCountRate(self):

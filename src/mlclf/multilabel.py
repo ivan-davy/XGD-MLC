@@ -234,3 +234,34 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
             app.quit()
 
         return results_proba, results_act
+
+
+def mlClassifierLive(test_spectrum, method):
+    import pickle
+    ml_clf_model = None
+    mdl_location = f'{settings.clf_model_dir}{os.sep}' \
+                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
+                   f'{"_scaled_"}' \
+                   f'{method}_{"average"}_multi.mdl'
+    try:
+        with open(mdl_location, 'rb') as f:
+            ml_clf_model = pickle.load(f)
+    except FileNotFoundError:
+        print(chalk.redBright(f'\nModel file not found. Terminating'))
+        exit()
+    finally:
+        isotopes_found, i = [], 0
+        res_proba = mlClassification(test_spectrum, ml_clf_model, feature_type='average', scale=True)
+        print('a')
+
+        for key, value in isodata.clf_isotopes.items():
+            custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
+            if custom_proba > 1:
+                custom_proba = 1
+            if custom_proba < settings.clf_show_threshold:
+                i += 1
+                continue
+            isotopes_found.append(key)
+            i += 1
+
+        return ' '.join(isotopes_found)

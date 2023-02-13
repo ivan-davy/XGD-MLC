@@ -8,13 +8,13 @@ import pickle
 import pandas as pd
 from config import settings
 import numpy as np
-from utility.data import loadSpectrumData
 from utility.visual import mlShowLinfit, mlShowAverage
 from utility.common import bool_parse
 from simple_chalk import chalk
 
 
 def mlLoadBinarySets(user_args):
+    from utility.data import loadSpectrumData
     from os import walk, path
     source_sp_set, background_sp_set = [], []
     for root, dirs, files in walk(user_args["SrcSet"]):
