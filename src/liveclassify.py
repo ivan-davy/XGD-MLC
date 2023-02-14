@@ -1,10 +1,10 @@
 # В данный блок можно добавлять модули, необходимые для работы Вашей программы
 # import mymodule
-                          ##
-                         ##
-                        #############
-                         ##
-                          ##
+##
+##
+#############
+##
+##
 
 # В данный блок можно добавлять модули, необходимые для работы Вашей программы
 
@@ -14,13 +14,17 @@ from PyQt5.QtWidgets import *
 import numpy as np
 from struct import unpack
 
+from classes.spclass import Spectrum
+from mlclf import multilabel
+from utility import data
+
 
 # В данный блок можно добавлять Ваши функции и классы
-                          ##
-                         ##
-                        #############
-                         ##
-                          ##
+##
+##
+#############
+##
+##
 
 # В данный блок можно добавлять Ваши функции и классы
 
@@ -56,16 +60,18 @@ class MyWidget(QWidget):
         self.dead_time_percent = 0.0
 
         # Здесь можно поменять файл спектра, 
-        # на основе которого будет генерироваться информация 
-        self.open_sps_file('Сs137_15cm.sps')
+        # на основе которого будет генерироваться информация
+        ###
+        self.test_file_path = 'Cs137_15cm.sps'
+        self.open_sps_file(self.test_file_path)
 
     def on_click_start_button(self):
         self.start_time = time.time()
-        self.timer.start(1000) # Здесь можно поменять интерал времени обновления результата (аргумент в милисекундах)
+        self.timer.start(1000)  # Здесь можно поменять интерал времени обновления результата (аргумент в милисекундах)
 
     def on_click_stop_button(self):
         self.update_data()
-        self.label_time.setText('Time = ' + str(round(self.rTime,2)))
+        self.label_time.setText('Time = ' + str(round(self.rTime, 2)))
         self.timer.stop()
 
     def open_sps_file(self, filename):
@@ -75,41 +81,58 @@ class MyWidget(QWidget):
         self.lTime = unpack("I", raw_data)[0]
         raw_data = raw_file.read(4)
         self.rTime = unpack("I", raw_data)[0]
-        self.dead_time_percent = 1.0 - (self.lTime/self.rTime)
+        self.dead_time_percent = 1.0 - (self.lTime / self.rTime)
         raw_file.seek(440)
         raw_data = raw_file.read(4)
         self.A_coef = unpack("f", raw_data)[0]
         raw_data = raw_file.read(4)
         self.B_coef = unpack("f", raw_data)[0]
         raw_file.seek(1024)
-        raw_data = raw_file.read(4*4096)
+        raw_data = raw_file.read(4 * 4096)
         raw_file.close()
-        self.cps = unpack('4096I', raw_data)
-        self.cps = np.array(self.cps)
-        self.cps = self.cps/self.lTime
 
-
+        ###
+        self.raw_data = unpack('4096I', raw_data)
+        self.cps = np.array(self.raw_data)
+        self.cps = self.cps / self.lTime
 
     def update_data(self):
         self.rTime = time.time() - self.start_time
         self.lTime = self.rTime * (1.0 - self.dead_time_percent)
         self.data_y = self.cps * self.lTime
 
-
     def periodic_function(self):
+        ###
+        print("INIT")
+        test_sp = Spectrum(self.test_file_path,
+                           4096,
+                           self.rTime,
+                           self.lTime,
+                           [self.A_coef, self.B_coef],
+                           self.raw_data,
+                           None)
+        bkg_sp = data.loadSpectrumData('current_bkg.sps')
+        bkg_sp.rebin().calcCountRate()
+        bin_result = test_sp.sigmaBinaryClassify(bkg_sp) == 'Source'
+        print(bin_result)
+        multi_result = ''
+        if bin_result:
+            multi_result = multilabel.mlClassifierLive(test_sp, 'mllgr')
+        your_function_result = (bin_result, multi_result)
+        del test_sp, bkg_sp
+
         # в данный блок нужно добавить вызовы Ваших функций и
         # результат сохранить в переменной your_function_result
-                          ##
-                         ##
-                        #############
-                         ##
-                          ##
-        your_function_result = (True, 'Источник') # здесь происходит присвоение (результат True или False)
-        #your_function_result = (False, 'Фон')
+        ##
+        ##
+        #############
+        ##
+        ##
+        # your_function_result = (True, 'Источник')  # здесь происходит присвоение (результат True или False)
+        # your_function_result = (False, 'Фон')
         # в данный блок нужно добавить Вашу функцию и результат
-        self.label_time.setText('Time = ' + str(round(self.rTime,2)))
+        self.label_time.setText('Time = ' + str(round(self.rTime, 2)))
         self.line_report.setText('Result = ' + str(your_function_result))
-
 
 
 if __name__ == '__main__':
