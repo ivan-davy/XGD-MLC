@@ -45,7 +45,7 @@ default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manu
 peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
-bin_clf_only = False
+perform_multi = True
 
 predict_act = True
 clf_show_threshold = 0.2  # ~0.20 recommended
