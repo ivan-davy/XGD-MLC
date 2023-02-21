@@ -34,8 +34,8 @@ clf_feature_type = 'average'  # see const.const.supported_multilabel_clf_feature
 clf_method = 'mllgr'  # see const.const.supported_multilabel_clf_methods
 
 clf_display_threshold = 0.01
-
-clf_threshold = 0.6
+clf_show_threshold = 0.2  # ~0.2 recommended
+clf_threshold = 0.5  # ~0.5 recommended
 
 ###
 detector_inner_r = 7
@@ -48,7 +48,7 @@ enforce_cal = True  # True is recommended. Forces default_cal to all spectra, pr
 perform_multi = True
 
 predict_act = True
-clf_show_threshold = 0.2  # ~0.20 recommended
+
 
 
 visualize_progress = True

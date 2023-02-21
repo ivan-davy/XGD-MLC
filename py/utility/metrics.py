@@ -57,6 +57,8 @@ def getClfMetrics(results, **user_args):
     print(chalk.blue('\nCalculating statistics...'),
           f'(clf_threshold = {chalk.cyan(settings.clf_threshold)})')
 
+    #  results = {key: val for key, val in results.items() if '60s' in key}
+
     matches = 0
     for key, val in results.items():
         match = True
@@ -67,6 +69,8 @@ def getClfMetrics(results, **user_args):
                     break
         if match:
             matches += 1
+
+    print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
 
     total_sum = 0
     for key, val in results.items():
@@ -81,6 +85,8 @@ def getClfMetrics(results, **user_args):
         if expected_isotopes != 0:
             precision = correctly_guessed / expected_isotopes
         total_sum += precision
+
+    print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))
 
     total_sum = 0
     per_isotope_correctly_guessed = dict.fromkeys(clf_isotopes, 0)
@@ -103,8 +109,6 @@ def getClfMetrics(results, **user_args):
         accuracy = correctly_guessed / len(unique_isotopes)
         total_sum += accuracy
 
-    print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
-    print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))
     print(chalk.cyan(f'Accuracy:'), total_sum / len(results.keys()))
 
     print(chalk.cyan('\nPer-isotope accuracies:'))
