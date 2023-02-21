@@ -77,7 +77,7 @@ def classify(**user_parsed_args):
         exit()
 
     #  Multi-label spectra classification
-    if bool_parse(user_parsed_args['NoMulti']):
+    if not bool_parse(user_parsed_args['Multi']):
         exit()
     print(chalk.blue('\nProceeding to multi-label classification...'))
     if user_parsed_args['Method'] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
@@ -173,12 +173,12 @@ if __name__ == '__main__':
                         default=settings.export_clf_result_images,
                         type=str)
     parser.add_argument('-V', '--Vis',
-                        help='visualize multilabel classification progress',
+                        help='visualize multilabel classification progress?',
                         default=settings.visualize_progress,
                         type=str)
-    parser.add_argument('-n', '--NoMulti',
-                        help='perform binary classification only',
-                        default=settings.bin_clf_only,
+    parser.add_argument('-C', '--Multi',
+                        help='perform multilabel clf?',
+                        default=settings.perform_multi,
                         type=str)
     parser.add_argument('-A', '--Act',
                         help='predict source activities?',

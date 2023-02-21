@@ -34,8 +34,8 @@ clf_feature_type = 'average'  # see const.const.supported_multilabel_clf_feature
 clf_method = 'mllgr'  # see const.const.supported_multilabel_clf_methods
 
 clf_display_threshold = 0.01
-
-clf_threshold = 0.6
+clf_show_threshold = 0.2  # ~0.2 recommended
+clf_threshold = 0.5  # ~0.5 recommended
 
 ###
 detector_inner_r = 7
@@ -45,10 +45,10 @@ default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manu
 peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
-bin_clf_only = False
+perform_multi = True
 
 predict_act = True
-clf_show_threshold = 0.2  # ~0.20 recommended
+
 
 
 visualize_progress = True
