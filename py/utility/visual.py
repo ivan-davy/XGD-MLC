@@ -221,7 +221,7 @@ def plotClassificationResults(spectrum, results, act_results, show_results=True,
     info = f'CHANNELS:  {spectrum.channel_qty}\n' \
            f'LIVET (s): {spectrum.live_time_int}\n' \
            f'REALT (s): {spectrum.real_time_int}\n' \
-           f'DIST (cm): {int(spectrum.distance_from_src)}'
+           f'DIST (cm): {int(spectrum.distance_to_src)}'
 
     ax1.text(0.87, 0.96,
              info,

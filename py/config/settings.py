@@ -42,6 +42,7 @@ detector_inner_r = 7
 
 kev_cap = 1500  # no less than 1500 (or highest line kev in clf_isotopes)
 default_cal = [1.317870020866394, 0.1251399964094162]  # Recommended to set manually with enforce-cal set to True
+default_distance_to_src = 15
 peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files

@@ -14,7 +14,7 @@ class Spectrum:
         self.live_time_int = live_time_int
         self.cal = cal
         self.bin_data = bin_data
-        self.distance_from_src = distance
+        self.distance_to_src = distance
         self.calib_bins = None
         self.calib_bin_data = None
         self.rebin_bins = None
