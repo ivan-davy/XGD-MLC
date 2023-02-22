@@ -103,8 +103,7 @@ class MyWidget(QWidget):
 
     def periodic_function(self):
         ###
-        print("INIT")
-        test_sp = Spectrum(self.test_file_path,
+        test_sp = Spectrum('',
                            4096,
                            self.rTime,
                            self.lTime,
@@ -114,11 +113,11 @@ class MyWidget(QWidget):
         bkg_sp = data.loadSpectrumData('current_bkg.sps')
         bkg_sp.rebin().calcCountRate()
         bin_result = test_sp.sigmaBinaryClassify(bkg_sp) == 'Source'
-        print(bin_result)
         multi_result = ''
         if bin_result:
             multi_result = multilabel.mlClassifierLive(test_sp, 'mllgr')
         your_function_result = (bin_result, multi_result)
+        print(your_function_result)
         del test_sp, bkg_sp
 
         # в данный блок нужно добавить вызовы Ваших функций и

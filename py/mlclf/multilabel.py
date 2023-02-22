@@ -250,18 +250,20 @@ def mlClassifierLive(test_spectrum, method):
         print(chalk.redBright(f'\nModel file not found. Terminating'))
         exit()
     finally:
-        isotopes_found, i = [], 0
-        res_proba = mlClassification(test_spectrum, ml_clf_model, feature_type='average', scale=True)
-        print('a')
+        proba_result, i = {}, 0
+        proba = mlClassification(test_spectrum, ml_clf_model, feature_type='average', scale=True)
 
         for key, value in isodata.clf_isotopes.items():
-            custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
+            custom_proba = proba[i] * isodata.clf_proba_custom_multipliers[key]
             if custom_proba > 1:
                 custom_proba = 1
             if custom_proba < settings.clf_show_threshold:
                 i += 1
                 continue
-            isotopes_found.append(key)
+            proba_result[key] = round(custom_proba, 3)
             i += 1
 
-        return ' '.join(isotopes_found)
+        act_result = activity.predictActivity(test_spectrum, proba_result.keys())
+
+        return_fstring = ''.join([f'{key} {proba_result[key]} {round(act_result[key] / 1000)};' for key in proba_result.keys()])
+        return return_fstring

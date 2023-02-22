@@ -11,9 +11,11 @@ def predictActivity(spectrum, confirmed_isotopes):
         isotope_peak_sums[isotope] = area
 
     predicted_activities = {}
+    spectrum.distance_to_src = settings.default_distance_to_src if not spectrum.distance_to_src \
+        else spectrum.distance_to_src
     for key, val in isotope_peak_sums.items():
         predicted_activities[key] = val * isodata.cal_area_to_act_multiplier[key] \
-                                    * ((spectrum.distance_from_src + settings.detector_inner_r) /
+                                    * ((spectrum.distance_to_src + settings.detector_inner_r) /
                                        (isodata.cal_area_to_act_multiplier_distance + settings.detector_inner_r)) \
                                     ** 2
     return predicted_activities
