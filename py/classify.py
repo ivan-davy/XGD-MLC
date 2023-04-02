@@ -9,9 +9,6 @@ from simple_chalk import chalk
 from const import const
 
 
-# TODO: Отрефакторить отчеты, подобрать хорошие параметры, внедрить распознавание активности
-
-
 def classify(**user_parsed_args):
     #  Loading test spectra set
     test_spectrum_set, counter = [], 0
@@ -79,7 +76,7 @@ def classify(**user_parsed_args):
     #  Multi-label spectra classification
     if not bool_parse(user_parsed_args['Multi']):
         exit()
-    print(chalk.blue('\nProceeding to multi-label classification...'))
+    print(chalk.blue('\nProceeding to multilabel classification...'))
     if user_parsed_args['Method'] in const.supported_multilabel_clf_methods and user_parsed_args["Feature"] \
             in const.supported_multilabel_clf_features:
 
@@ -100,6 +97,8 @@ def classify(**user_parsed_args):
                                                           **user_parsed_args)
 
         getClfMetrics(clf_proba_results, **user_parsed_args)
+        for key, iso in isodata.clf_isotopes.items():
+            print(key, iso.acq_decay_rate)
 
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))

@@ -33,7 +33,7 @@ Loads of painfully complicated math (which I had a fortune of not developing, th
 
 And then you can scale them, for example, by applying tan() to every one. In some cases, it can make the classification results more accurate. 
 
-At first, the whole dataset gets binary-classified (has gamma-signature / doesn't have gamma-signature). Then comes the multi-label classification step: spectra with detected energy peaks are processed further. Multiple nonexclusive categories may be assigned to each instance -- for example, a spectrum may contain both Cs137 and Co60 energy peaks. It also provides the user with a measure of certainty of its prediction regarding the presence of detected isotopes' signatures in the spectrum. 
+At first, the whole dataset gets binary-classified (has gamma-signature / doesn't have gamma-signature). Then comes the multilabel classification step: spectra with detected energy peaks are processed further. Multiple nonexclusive categories may be assigned to each instance -- for example, a spectrum may contain both Cs137 and Co60 energy peaks. It also provides the user with a measure of certainty of its prediction regarding the presence of detected isotopes' signatures in the spectrum. 
 
 Both binary and multilabel steps require different datasets and models, so they are stored in program's filesystem separately.
 
@@ -51,14 +51,14 @@ Indeed! To sum it up, these are the general steps the program does to give user 
 7. Finds features (selected by user) in all datasets, creates a new dataframe;
 8. Creates a user-selected binary model, evaluates its preliminary performance;
 9. Performs binary classification. Exports results to report file (default path /reports/bin_clf_report.txt), calculates the error matrix and prints it to CLI;
-10. Proceeds to multi-label classification (if configured - if not, stop);
-11. Checks if there is already a previously created multi-label ML-model file available in /models/multilabel (with the same configuration as currently set by user). If yes, proceed to step 16;
-12. No multi-label model found - checks if there is already a previously created multilabel dataframe file available in /dataframes/multilabel (with the same configuration as currently set by user). If yes, skip to step 15;
+10. Proceeds to multilabel classification (if configured - if not, stop);
+11. Checks if there is already a previously created multilabel ML-model file available in /models/multilabel (with the same configuration as currently set by user). If yes, proceed to step 16;
+12. No multilabel model found - checks if there is already a previously created multilabel dataframe file available in /dataframes/multilabel (with the same configuration as currently set by user). If yes, skip to step 15;
 13. Loads .sps filesets (to learn) from their designated directories (sps/srcs, sps/bkgs by default), placing the spectra data into instances of *Spectrum* class;
 14. Finds features (selected by user) in all datasets, creates a new dataframe;
-15. Creates a user-selected multi-label model, evaluates its preliminary performance;
+15. Creates a user-selected multilabel model, evaluates its preliminary performance;
 17. Proceeds to activity prediction (if configured). Calculates peak data, creating *Peak*-class objects;
-16. Performs multi-label classification. Shows the gamma-spectrum classification result graph (detected peaks, probabilities, gamma-source activities - exports it to /images, if configured). Exports results to report file (default path /reports/clf_report.txt), calculates metrics (EMR, Accuracy, Precision) and prints them to CLI;
+16. Performs multilabel classification. Shows the gamma-spectrum classification result graph (detected peaks, probabilities, gamma-source activities - exports it to /images, if configured). Exports results to report file (default path /reports/clf_report.txt), calculates metrics (EMR, Accuracy, Precision) and prints them to CLI;
 17. Exits.
 
 
