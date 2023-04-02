@@ -147,6 +147,8 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
 def mlClassifier(test_spectrum_set, out, predict_act=True,
                  show=False, show_progress=True, show_results=True, export_images=True, **user_args):
     import pickle
+    import warnings
+    warnings.filterwarnings(action='ignore')
     ml_clf_model = None
     mdl_location = f'{settings.clf_model_dir}{os.sep}' \
                    f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \

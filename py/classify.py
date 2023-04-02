@@ -97,8 +97,6 @@ def classify(**user_parsed_args):
                                                           **user_parsed_args)
 
         getClfMetrics(clf_proba_results, **user_parsed_args)
-        for key, iso in isodata.clf_isotopes.items():
-            print(key, iso.acq_decay_rate)
 
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))

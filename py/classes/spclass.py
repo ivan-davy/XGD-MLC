@@ -4,6 +4,7 @@ import config.isodata
 from mlclf.binary import *
 from config import settings
 import numpy as np
+from scipy.signal import savgol_filter
 
 
 class Spectrum:
@@ -140,7 +141,13 @@ class Spectrum:
             self.rebin_bin_data = (y2 * self.cal[0]).tolist()
             if settings.keep_redundant_data is False:
                 self.rebin_bin_data = self.rebin_bin_data[:int(settings.kev_cap)]
+            if settings.perform_filtering:
+                self.filter()
         return self
+
+    def filter(self):
+        self.rebin_bin_data = savgol_filter(np.array(self.rebin_bin_data), settings.filter_window, 2, mode='nearest')\
+            .tolist()
 
     def calcCountRate(self):
         if not self.corrupted:

@@ -46,10 +46,12 @@ default_distance_to_src = 15
 peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
+
+perform_filtering = True
+filter_window = 25
+
 perform_multi = True
-
 predict_act = True
-
 
 visualize_progress = True
 show_results = False
