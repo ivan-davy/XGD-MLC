@@ -47,7 +47,7 @@ peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
 
-perform_filtering = True
+perform_filtering = False  # May negatively affect multiclf for some radionuclides, slightly better accuracy overall
 filter_window = 25
 
 perform_multi = True
