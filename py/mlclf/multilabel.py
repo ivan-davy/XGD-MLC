@@ -4,6 +4,8 @@ from sklearn.model_selection import train_test_split
 import pickle
 import pandas as pd
 import numpy as np
+
+import utility.common
 from config import isodata, settings
 from utility.visual import mlShowAverage, plotClassificationResults
 from utility.data import loadSpectrumData
@@ -13,7 +15,7 @@ from simple_chalk import chalk
 from activity import activity
 
 
-def mlLoadSets(user_args):
+def mlLoadSets(bkg_sp, user_args):
     from os import walk, path, scandir
     sp_set = {}
     subdirs = [f.path for f in scandir(f'{user_args["SrcSet"]}') if f.is_dir()]
@@ -34,13 +36,16 @@ def mlLoadSets(user_args):
     return sp_set
 
 
-def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section, show=False):
+def mlGetFeatures(spectrum, bkg_spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins_per_section,
+                  show=False, subtract=False):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
     if feature_type == 'average':
         spectrum_c = []
         if spectrum.corrupted is False:
             spectrum.rebin()
             spectrum.calcCountRate()
+            if subtract:
+                spectrum.subtractCountRateBkg(bkg_spectrum)
             for section in range(num_of_sections):
                 section_c = spectrum.count_rate_bin_data[section * bins_per_sect:(section + 1) * bins_per_sect]
                 spectrum_c.append(sum(section_c) / bins_per_sect)
@@ -50,10 +55,12 @@ def mlGetFeatures(spectrum, feature_type, bins_per_sect=settings.ml_bin_clf_bins
 
 
 def mlCreateModel(sp_set,
+                  bkg_spectrum,
                   feature_type,
                   method,
                   bins_per_sect=settings.ml_clf_bins_per_section,
                   scale=True,
+                  subtract=False,
                   show=False,
                   show_progress=True):
     num_of_sections = int(settings.kev_cap / bins_per_sect)
@@ -78,8 +85,10 @@ def mlCreateModel(sp_set,
             data_features_set = {}
             for key, value in sp_set.items():
                 value.features_array = mlGetFeatures(value,
+                                                     bkg_spectrum,
                                                      feature_type,
                                                      bins_per_sect=bins_per_sect,
+                                                     subtract=subtract,
                                                      show=show)
                 data_features_set[key] = value.features_array
                 y.append(value.src_known_isotope.name)
@@ -130,11 +139,12 @@ def mlFormCompleteModel(X, y, ml_clf_model):
     return ml_clf_model
 
 
-def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_clf_bins_per_section,
+def mlClassification(test_spectrum, bkg_spectrum, ml_model, feature_type, bins_per_sect=settings.ml_clf_bins_per_section,
                      scale=True):
     X_test = None
     if feature_type == 'average':
         test_ml = mlGetFeatures(test_spectrum,
+                                bkg_spectrum,
                                 feature_type,
                                 bins_per_sect=bins_per_sect)
         X_test = np.array(test_ml).reshape(1, -1)
@@ -144,15 +154,16 @@ def mlClassification(test_spectrum, ml_model, feature_type, bins_per_sect=settin
     return res_proba
 
 
-def mlClassifier(test_spectrum_set, out, predict_act=True,
+def mlClassifier(test_spectrum_set, bkg_spectrum, out, predict_act=True,
                  show=False, show_progress=True, show_results=True, export_images=True, **user_args):
     import pickle
     import warnings
     warnings.filterwarnings(action='ignore')
     ml_clf_model = None
     mdl_location = f'{settings.clf_model_dir}{os.sep}' \
-                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev' \
-                   f'{"_scaled_" if bool_parse(user_args["Scale"]) else "_"}' \
+                   f'{settings.ml_clf_bins_per_section}bps_{settings.kev_cap}kev_' \
+                   f'{"scaled_" if bool_parse(user_args["Scale"]) else ""}' \
+                   f'{"subtracted_" if bool_parse(user_args["Subtract"]) else ""}' \
                    f'{user_args["Method"]}_{user_args["Feature"]}_multi.mdl'
     try:
         print(chalk.blue(f'Looking for {mdl_location}... '), end='')
@@ -161,11 +172,13 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
         print(chalk.green('File found.'))
     except FileNotFoundError:
         print(chalk.yellow(f'\nModel file not found. '), 'Creating a new one...')
-        sp_set = mlLoadSets(user_args)
+        sp_set = mlLoadSets(bkg_spectrum, user_args)
         ml_clf_model = mlCreateModel(sp_set,
+                                     bkg_spectrum,
                                      user_args["Feature"],
                                      user_args["Method"],
                                      scale=bool_parse(user_args["Scale"]),
+                                     subtract=bool_parse(user_args["Subtract"]),
                                      show=False,
                                      show_progress=show_progress)
         os.makedirs(os.path.dirname(mdl_location), exist_ok=True)
@@ -187,9 +200,13 @@ def mlClassifier(test_spectrum_set, out, predict_act=True,
                 counter += 1
                 print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
 
+            if bool_parse(user_args['Subtract']):
+                test_spectrum.subtractCountRateBkg(bkg_spectrum)
+
             #  Classification + probability predictions
             test_spectrum_proba_result, i = {}, 0
-            res_proba = mlClassification(test_spectrum, ml_clf_model, user_args["Feature"], scale=user_args["Scale"])
+            res_proba = mlClassification(test_spectrum, bkg_spectrum, ml_clf_model, user_args["Feature"],
+                                         scale=bool_parse(user_args["Scale"]))
 
             for key, value in isodata.clf_isotopes.items():
                 custom_proba = res_proba[i] * isodata.clf_proba_custom_multipliers[key]
@@ -267,5 +284,6 @@ def mlClassifierLive(test_spectrum, method):
 
         act_result = activity.predictActivity(test_spectrum, proba_result.keys())
 
-        return_fstring = ''.join([f'{key} {proba_result[key]} {round(act_result[key] / 1000)};' for key in proba_result.keys()])
+        return_fstring = ''.join(
+            [f'{key} {proba_result[key]} {round(act_result[key] / 1000)};' for key in proba_result.keys()])
         return return_fstring

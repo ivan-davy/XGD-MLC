@@ -28,6 +28,8 @@ def classify(**user_parsed_args):
 
     #  Loading background reference spectrum
     bkg_spectrum = loadSpectrumData(user_parsed_args['Bkg'])
+    if not bkg_spectrum.corrupted:
+        bkg_spectrum.rebin().calcCountRate()
 
     #  Test spectra set processing
     if test_spectrum_set:
@@ -38,8 +40,6 @@ def classify(**user_parsed_args):
             counter += 1
             #  plotBinData(test_spectrum)
             print('\r', chalk.cyan(counter), '/', len(test_spectrum_set), test_spectrum.path, end='')
-    if not bkg_spectrum.corrupted:
-        bkg_spectrum.rebin().calcCountRate()
 
     #  Binary spectra classification
     print(chalk.blue('\n\nProceeding to binary spectra classification...'))
@@ -88,6 +88,7 @@ def classify(**user_parsed_args):
         no_bkg_test_spectrum_set = [sp for sp in test_spectrum_set if bin_results[sp.path] == 'Source']
 
         clf_proba_results, clf_act_results = mlClassifier(no_bkg_test_spectrum_set,
+                                                          bkg_spectrum,
                                                           clf_out,
                                                           predict_act=bool_parse(user_parsed_args['Act']),
                                                           show=bool_parse(user_parsed_args['Vis']),
@@ -161,6 +162,10 @@ if __name__ == '__main__':
                         help='perform ML data pre-processing?',
                         default=settings.ml_perform_data_scaling,
                         type=str)
+    parser.add_argument('-x', '--Subtract',
+                        help='perform bkg spectra subtraction? (multilabel only)',
+                        default=settings.subtract_bkg,
+                        type=str)
     parser.add_argument('-p', '--Print',
                         help='show results?',
                         default=settings.show_results,
@@ -169,16 +174,16 @@ if __name__ == '__main__':
                         help='export images to default image directory?',
                         default=settings.export_clf_result_images,
                         type=str)
-    parser.add_argument('-V', '--Vis',
+    parser.add_argument('-v', '--Vis',
                         help='visualize multilabel classification progress?',
                         default=settings.visualize_progress,
                         type=str)
-    parser.add_argument('-C', '--Multi',
+    parser.add_argument('-c', '--Multi',
                         help='perform multilabel clf?',
                         default=settings.perform_multi,
                         type=str)
-    parser.add_argument('-A', '--Act',
-                        help='predict source activities?',
+    parser.add_argument('-a', '--Act',
+                        help='estimate isotope activities?',
                         default=settings.predict_act,
                         type=str)
 

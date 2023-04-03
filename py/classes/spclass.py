@@ -146,7 +146,7 @@ class Spectrum:
         return self
 
     def filter(self):
-        self.rebin_bin_data = savgol_filter(np.array(self.rebin_bin_data), settings.filter_window, 2, mode='nearest')\
+        self.rebin_bin_data = savgol_filter(np.array(self.rebin_bin_data), settings.filter_window, 2, mode='nearest') \
             .tolist()
 
     def calcCountRate(self):
@@ -168,11 +168,9 @@ class Spectrum:
                 del self.count_rate_bin_data[settings.kev_cap:]
 
     def subtractCountRateBkg(self, bkg):
-        if bkg.count_rate_bin_data is None:
-            bkg.calcCountRate()
-        self.count_rate_bin_data = [self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i]
-                                    if self.count_rate_bin_data[i] - bkg.count_rate_bin_data[i] >= 0 else 0.0
-                                    for i in range(len(self.count_rate_bin_data))]
+        self.count_rate_bin_data = [max(0, self.count_rate_bin_data[kev]
+                                        - bkg.count_rate_bin_data[kev])
+                                    for kev in range(len(self.rebin_bins))]
 
     def getNumOfEvents(self, dtype='count_rate'):
         if dtype == 'raw':
