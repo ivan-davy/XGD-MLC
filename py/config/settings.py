@@ -33,7 +33,7 @@ ml_clf_bins_per_section = 5
 clf_feature_type = 'average'  # see const.const.supported_multilabel_clf_features
 clf_method = 'mllgr'  # see const.const.supported_multilabel_clf_methods
 
-clf_display_threshold = 0.01
+clf_display_threshold = 0.01  # visual debug parameter (ignore)
 clf_show_threshold = 0.2  # ~0.2 recommended
 clf_threshold = 0.5  # ~0.5 recommended
 
@@ -46,11 +46,13 @@ default_distance_to_src = 15
 peak_delta_x = 20
 
 enforce_cal = True  # True is recommended. Forces default_cal to all spectra, preventing NaN-issues with corrupted files
+
+subtract_bkg = False  # Experimental. Currently produces worse results
+perform_filtering = True  # May negatively affect some radionuclides, but leads to slightly better accuracy overall
+filter_window = 5
+
 perform_multi = True
-
 predict_act = True
-
-
 
 visualize_progress = True
 show_results = False

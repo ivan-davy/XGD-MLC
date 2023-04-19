@@ -2,7 +2,7 @@ from datetime import date
 from classes.isoclass import Isotope
 
 clf_proba_custom_multipliers = {  # >: more detections, <: less detections
-    'Na22': 10,
+    'Na22': 12,
     'Co60': 5,
     'Cs137': 5,
     'Eu152': 2,
