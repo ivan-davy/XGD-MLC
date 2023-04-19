@@ -273,7 +273,7 @@ def plotClassificationResults(spectrum, results, act_results, show_results=True,
         plt.show()
     if export:
         img_path = f'{settings.images_path.joinpath(Path(spectrum.path).resolve().stem)}.png'
-        plt.savefig(img_path, bbox_inches='tight')
+        plt.savefig(img_path, bbox_inches='tight', dpi='figure')
         plt.close()
         if show and vis is not None:
             vis.show_image(img_path)
