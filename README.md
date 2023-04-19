@@ -69,23 +69,24 @@ With this dataset, you will be able to work with Na22, Co60, Cs137, Eu152 and Am
 
 
 
-|     -h,    --help             | –                         | Displays all supported commands                                                                                 |   |   |
-|-------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------|---|---|
-|     -T,    --TestSet          | Absolute path (directory) | Sets a test spectra set directory                                                                               |   |   |
-|     -S,    --SrcSet           | Absolute path (directory) | Sets a source spectra set directory                                                                             |   |   |
-|     -B,    --BkgSet           | Absolute path (directory) | Sets a background spectra set directory                                                                         |   |   |
-|     -b,    --Bkg              | Absolute path (file)      | Sets a reference background spectrum (for non-ML methods)                                                       |   |   |
-|     -m,    --MethodBinary     | sigma, mlrf, mldt, mllgr  | Sets binary classification method (non-ML "sigma" method,  random forest, decision tree, logistical regression) |   |   |
-|     -M,    --Method           | mllgr, mldt, mlrf         | Sets multilabel classification method                                                                           |   |   |
-|     -f,    --FeatureBinary    | average, linfit           | Sets feature type for binary classification                                                                     |   |   |
-|     -F,    --Feature          | average                   | Sets feature type for multilabel classification                                                                 |   |   |
-|     -o,    --OutputBinary     | Absolute path (file)      | Sets binary output file                                                                                         |   |   |
-|     -o,    --Output           | Absolute path (file)      | Sets multilabel output file                                                                                     |   |   |
-|     -q,    --Scale            | Boolean                   | Scale features?                                                                                                 |   |   |
-|     -I,    --Images           | Boolean                   | Save images?                                                                                                    |   |   |
-|     -v,    --Vis              | Boolean                   | Show visual progress?                                                                                           |   |   |
-|     -c,    --Multi            | Boolean                   | Perform multilabel classification?                                                                              |   |   |
-|     -a,    --Act              | Boolean                   | Estimate decay rates?                                                                                           |   |   |
+|     Option          |Data type                         | Description                                                                               | 
+|-------------------------------|---------------------------|-----------------------------------------------------------------------------------------------------------------|
+|     -h,    --help             | –                         | Displays all supported commands                                                                                 |
+|     -T,    --TestSet          | Absolute path (directory) | Sets a test spectra set directory                                                                               |
+|     -S,    --SrcSet           | Absolute path (directory) | Sets a source spectra set directory                                                                             |
+|     -B,    --BkgSet           | Absolute path (directory) | Sets a background spectra set directory                                                                         |
+|     -b,    --Bkg              | Absolute path (file)      | Sets a reference background spectrum (for non-ML methods)                                                       |
+|     -m,    --MethodBinary     | sigma, mlrf, mldt, mllgr  | Sets binary classification method (non-ML "sigma" method,  random forest, decision tree, logistical regression) |
+|     -M,    --Method           | mllgr, mldt, mlrf         | Sets multilabel classification method                                                                           |
+|     -f,    --FeatureBinary    | average, linfit           | Sets feature type for binary classification                                                                     |
+|     -F,    --Feature          | average                   | Sets feature type for multilabel classification                                                                 |
+|     -o,    --OutputBinary     | Absolute path (file)      | Sets binary output file                                                                                         |
+|     -o,    --Output           | Absolute path (file)      | Sets multilabel output file                                                                                     |
+|     -q,    --Scale            | Boolean                   | Scale features?                                                                                                 |
+|     -I,    --Images           | Boolean                   | Save images?                                                                                                    |
+|     -v,    --Vis              | Boolean                   | Show visual progress?                                                                                           |
+|     -c,    --Multi            | Boolean                   | Perform multilabel classification?                                                                              |
+|     -a,    --Act              | Boolean                   | Estimate decay rates?                                                                                           |
 
 
 ## It doesn't work / something's broken / your code sucks!
