@@ -60,5 +60,5 @@ show_results = False
 export_clf_result_images = True
 
 ml_perform_data_scaling = True  # True is recommended
-delete_corrupted = True  # Recommended to set to True on first launch (backup your data!)
+delete_corrupted = True  # Recommended to set to True on first launch (make sure to back up your data!)
 keep_redundant_data = False  # False is recommended
