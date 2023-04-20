@@ -53,6 +53,7 @@ filter_window = 5
 
 perform_multi = True
 predict_act = True
+calc_metrics = True
 
 visualize_progress = True
 show_results = False

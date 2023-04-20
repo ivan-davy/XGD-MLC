@@ -97,7 +97,8 @@ def classify(**user_parsed_args):
                                                           export_images=bool_parse(user_parsed_args['Images']),
                                                           **user_parsed_args)
 
-        getClfMetrics(clf_proba_results, **user_parsed_args)
+        if settings.calc_metrics:
+            getClfMetrics(clf_proba_results, **user_parsed_args)
 
     else:
         print(chalk.redBright('\nRequested multilabel classification method / feature not supported.'))

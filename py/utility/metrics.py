@@ -70,23 +70,35 @@ def getClfMetrics(results, **user_args):
         if match:
             matches += 1
 
-    print(chalk.cyan(f'EMR:'), matches / len(results.keys()))
+    emr_result = matches / len(results.keys())
+    print(chalk.cyan(f'EMR:'), emr_result)
 
-    total_sum = 0
+    total_sum_precision = 0
+    total_sum_recall = 0
     for key, val in results.items():
         correctly_guessed = 0
+        guessed = 0
         expected_isotopes = 0
         precision = 0
+        recall = 0
         for isotope in clf_isotopes.keys():
+            if val.get(isotope, 0) > settings.clf_threshold:
+                guessed += 1
             if isotope in key:
                 expected_isotopes += 1
                 if val.get(isotope, 0) > settings.clf_threshold:
                     correctly_guessed += 1
         if expected_isotopes != 0:
             precision = correctly_guessed / expected_isotopes
-        total_sum += precision
+        if guessed != 0:
+            recall = correctly_guessed / guessed
+        total_sum_precision += precision
+        total_sum_recall += recall
 
-    print(chalk.cyan(f'Precision:'), total_sum / len(results.keys()))
+    precision_result = total_sum_precision / len(results.keys())
+    print(chalk.cyan(f'Precision:'), precision_result)
+    recall_result = total_sum_recall / len(results.keys())
+    print(chalk.cyan(f'Recall:'), recall_result)
 
     total_sum = 0
     per_isotope_correctly_guessed = dict.fromkeys(clf_isotopes, 0)
@@ -102,14 +114,18 @@ def getClfMetrics(results, **user_args):
                 unique_isotopes.add(isotope)
         for unique_isotope in unique_isotopes:
             per_isotope_total[unique_isotope] += 1
-            if val.get(unique_isotope, 0) > settings.clf_threshold:
+            if val.get(unique_isotope, 0) > settings.clf_threshold and unique_isotope in key:
                 correctly_guessed += 1
                 if unique_isotope in key:
                     per_isotope_correctly_guessed[unique_isotope] += 1
         accuracy = correctly_guessed / len(unique_isotopes)
         total_sum += accuracy
 
-    print(chalk.cyan(f'Accuracy:'), total_sum / len(results.keys()))
+    accuracy_result = total_sum / len(results.keys())
+    print(chalk.cyan(f'Accuracy:'), accuracy_result)
+
+    f1_result = 2 * precision_result * recall_result / (precision_result + recall_result)
+    print(chalk.cyanBright(f'F1-Score:'), f1_result)
 
     print(chalk.cyan('\nPer-isotope accuracies:'))
     for key in per_isotope_total:
@@ -118,3 +134,5 @@ def getClfMetrics(results, **user_args):
             print(f'{key}: {per_isotope_accuracies[key]}')
         except ZeroDivisionError:
             continue
+
+    return emr_result, precision_result, recall_result, accuracy_result, f1_result
